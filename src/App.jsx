@@ -5,20 +5,34 @@ const DEFAULT_HEADER = "Thank you for getting your lab tests done. Here is my in
 const DEFAULT_FOOTER = "Other lab abnormalities not mentioned are not of any importance to your health. If you have further questions about your results, please send me a MyHealth message or schedule a video visit so we can discuss in more detail.";
 
 const DEFAULT_SNIPPETS = [
-  { id:"tsh_low_on_meds",      group:"TSH", trigger:"TSH low on meds",        text:"Your TSH is low which suggests your thyroid dose is too high. I'll send in a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.", actions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"] },
-  { id:"tsh_low_not_on_meds",  group:"TSH", trigger:"TSH low (not on meds)",  text:"Your TSH (thyroid) is low which suggests you may have a hyperactive thyroid gland which can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.", actions:["Order TSH recheck in 6–8 weeks"] },
-  { id:"tsh_normal_on_meds",   group:"TSH", trigger:"TSH normal on meds",     text:"Your thyroid level (TSH) looks great. Your medication is working well and keeping your thyroid in the normal range. Keep taking it as prescribed.", actions:[] },
-  { id:"tsh_normal_not_on_meds",group:"TSH",trigger:"TSH normal (not on meds)",text:"Your thyroid level (TSH) is normal.", actions:[] },
-  { id:"tsh_high_on_meds",     group:"TSH", trigger:"TSH high on meds",       text:"Your TSH is higher than it should be which suggests you may need a higher dose of your thyroid medication if you've been taking it as prescribed. I'll send in a prescription to your pharmacy with a slightly higher dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.", actions:["Send higher-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"] },
-  { id:"tsh_high_not_on_meds", group:"TSH", trigger:"TSH high (not on meds)", text:"Your TSH is high which indicates your thyroid level is lower than normal. This can sometimes cause symptoms like fatigue, feeling cold, or weight gain. If you are feeling fine, we can just recheck in a year. If you are troubled by any of those symptoms, let me know and we can start a low dose of thyroid medication to see if it helps.", actions:[] },
-  { id:"cbc_normal",           group:"CBC", trigger:"CBC normal",              text:"Your complete blood count, which checks your red blood cells, white blood cells, and platelets, is all normal.", actions:[] },
-  { id:"mild_anemia",          group:"CBC", trigger:"Mild anemia needs labs",  text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2-3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", actions:["Order anemia workup labs","Schedule follow-up visit with patient (video OK)"] },
-  { id:"bmp_normal",           group:"BMP", trigger:"BMP normal",              text:"Your electrolytes and kidney function are normal.", actions:[] },
-  { id:"lfts_normal",          group:"LFTs",trigger:"LFTs normal",             text:"Your liver tests are normal.", actions:[] },
-  { id:"transaminitis_new",    group:"LFTs",trigger:"Transaminitis new",       text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause of this. Possible causes include alcohol, herbal medications or supplements, or fat collection in the liver. I've ordered repeat blood tests that I'd like you to do in about a month.", actions:["Order repeat LFTs + liver workup in ~1 month"] },
-  { id:"transaminitis_still",  group:"LFTs",trigger:"Transaminitis still",     text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). Treat this with avoiding alcohol, herbs or supplements which can further irritate the liver and through weight loss. We should recheck blood tests every 6 months to monitor this condition.", actions:["Order repeat LFTs in 6 months"] },
-  { id:"still_prediabetes",    group:"A1c", trigger:"Still prediabetes",       text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat tests as often as every 3 months.", actions:[] },
-  { id:"new_prediabetes",      group:"A1c", trigger:"New prediabetes",         text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet and lifestyle and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat tests as often as every 3 months.", actions:[] },
+  { id:"tsh_low_on_meds",       group:"TSH", trigger:"TSH low on meds",         text:"Your TSH is low which suggests your thyroid dose is too high. I'll send in a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.",
+    clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_low_not_on_meds",   group:"TSH", trigger:"TSH low (not on meds)",   text:"Your TSH (thyroid) is low which suggests you may have a hyperactive thyroid gland which can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.",
+    clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_normal_on_meds",    group:"TSH", trigger:"TSH normal on meds",      text:"Your thyroid level (TSH) looks great. Your medication is working well and keeping your thyroid in the normal range. Keep taking it as prescribed.",
+    clinicianActions:[], staffActions:[] },
+  { id:"tsh_normal_not_on_meds",group:"TSH", trigger:"TSH normal (not on meds)",text:"Your thyroid level (TSH) is normal.",
+    clinicianActions:[], staffActions:[] },
+  { id:"tsh_high_on_meds",      group:"TSH", trigger:"TSH high on meds",        text:"Your TSH is higher than it should be which suggests you may need a higher dose of your thyroid medication if you've been taking it as prescribed. I'll send in a prescription to your pharmacy with a slightly higher dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order into your lab. Please mark your calendar to get the tests done in 6-8 weeks.",
+    clinicianActions:["Send higher-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_high_not_on_meds",  group:"TSH", trigger:"TSH high (not on meds)",  text:"Your TSH is high which indicates your thyroid level is lower than normal. This can sometimes cause symptoms like fatigue, feeling cold, or weight gain. If you are feeling fine, we can just recheck in a year. If you are troubled by any of those symptoms, let me know and we can start a low dose of thyroid medication to see if it helps.",
+    clinicianActions:[], staffActions:[] },
+  { id:"cbc_normal",            group:"CBC", trigger:"CBC normal",               text:"Your complete blood count, which checks your red blood cells, white blood cells, and platelets, is all normal.",
+    clinicianActions:[], staffActions:[] },
+  { id:"mild_anemia",           group:"CBC", trigger:"Mild anemia needs labs",   text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2-3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.",
+    clinicianActions:["Order anemia workup labs"], staffActions:["Schedule follow-up visit with Dr. [name] within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"bmp_normal",            group:"BMP", trigger:"BMP normal",               text:"Your electrolytes and kidney function are normal.",
+    clinicianActions:[], staffActions:[] },
+  { id:"lfts_normal",           group:"LFTs",trigger:"LFTs normal",              text:"Your liver tests are normal.",
+    clinicianActions:[], staffActions:[] },
+  { id:"transaminitis_new",     group:"LFTs",trigger:"Transaminitis new",        text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause of this. Possible causes include alcohol, herbal medications or supplements, or fat collection in the liver. I've ordered repeat blood tests that I'd like you to do in about a month.",
+    clinicianActions:["Order repeat LFTs + liver workup in ~1 month"], staffActions:[] },
+  { id:"transaminitis_still",   group:"LFTs",trigger:"Transaminitis still",      text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). Treat this with avoiding alcohol, herbs or supplements which can further irritate the liver and through weight loss. We should recheck blood tests every 6 months to monitor this condition.",
+    clinicianActions:["Order repeat LFTs in 6 months"], staffActions:[] },
+  { id:"still_prediabetes",     group:"A1c", trigger:"Still prediabetes",        text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat tests as often as every 3 months.",
+    clinicianActions:[], staffActions:[] },
+  { id:"new_prediabetes",       group:"A1c", trigger:"New prediabetes",          text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet and lifestyle and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat tests as often as every 3 months.",
+    clinicianActions:[], staffActions:[] },
 ];
 
 // ── Storage helpers ──────────────────────────────────────────────────────────
@@ -29,7 +43,14 @@ function loadSnippets() {
     const parsed = JSON.parse(saved);
     const merged = DEFAULT_SNIPPETS.map(def => {
       const ov = parsed.find(s => s.id === def.id);
-      return ov ? { ...def, text: ov.text, actions: ov.actions } : def;
+      if (!ov) return def;
+      // support old single 'actions' field for backward compat
+      return {
+        ...def,
+        text: ov.text,
+        clinicianActions: ov.clinicianActions ?? (ov.actions ?? def.clinicianActions),
+        staffActions: ov.staffActions ?? def.staffActions,
+      };
     });
     const custom = parsed.filter(s => s.custom);
     return [...merged, ...custom];
@@ -53,7 +74,9 @@ function isCustomized(snippet) {
   if (snippet.custom) return true;
   const def = DEFAULT_SNIPPETS.find(d => d.id === snippet.id);
   if (!def) return false;
-  return def.text !== snippet.text || JSON.stringify(def.actions) !== JSON.stringify(snippet.actions);
+  return def.text !== snippet.text ||
+    JSON.stringify(def.clinicianActions) !== JSON.stringify(snippet.clinicianActions) ||
+    JSON.stringify(def.staffActions) !== JSON.stringify(snippet.staffActions);
 }
 
 // ── Group helpers ────────────────────────────────────────────────────────────
@@ -116,9 +139,10 @@ export default function App() {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [editActions, setEditActions] = useState("");
+  const [editStaffActions, setEditStaffActions] = useState("");
   const [editHf, setEditHf] = useState(null);
   const [showAddCustom, setShowAddCustom] = useState(false);
-  const [newTrigger, setNewTrigger] = useState({ trigger:"", text:"", actions:"", group:"", newGroup:"", useNew:false });
+  const [newTrigger, setNewTrigger] = useState({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
   const [showExport, setShowExport] = useState(false);
   const [exportEmail, setExportEmail] = useState("");
   const [showImport, setShowImport] = useState(false);
@@ -129,12 +153,17 @@ export default function App() {
 
   const conflicts = getConflicts(triggered, snippets);
 
-  const allActions = [];
+  const allClinicianActions = [];
+  const allStaffActions = [];
   triggered.forEach(id => {
     const s = snippets.find(sn => sn.id === id);
-    if (s) s.actions?.forEach(a => { if (!allActions.includes(a)) allActions.push(a); });
+    if (s) {
+      (s.clinicianActions || s.actions || []).forEach(a => { if (!allClinicianActions.includes(a)) allClinicianActions.push(a); });
+      (s.staffActions || []).forEach(a => { if (!allStaffActions.includes(a)) allStaffActions.push(a); });
+    }
   });
   const [checkedActions, setCheckedActions] = useState({});
+  const [staffCopied, setStaffCopied] = useState(false);
 
   // Build ordered note lines: for each group, non-wildcards first, wildcards last
   const noteLines = (() => {
@@ -259,6 +288,7 @@ export default function App() {
     setCheckedActions({});
     setMatchStatus(null);
     setCopied(false);
+    setStaffCopied(false);
   };
 
   const handleNewNote = () => {
@@ -287,19 +317,30 @@ export default function App() {
   };
 
   // ── Snippet editing ────────────────────────────────────────────────────────
-  const startEdit = (s) => { setEditingId(s.id); setEditText(s.text); setEditActions(s.actions?.join("\n") || ""); };
+  const startEdit = (s) => {
+    setEditingId(s.id);
+    setEditText(s.text);
+    setEditActions((s.clinicianActions || s.actions || []).join("\n"));
+    setEditStaffActions((s.staffActions || []).join("\n"));
+  };
   const saveEdit = () => {
     const updated = snippets.map(s => s.id === editingId
-      ? { ...s, text: editText, actions: editActions.split("\n").map(a=>a.trim()).filter(Boolean) }
+      ? { ...s, text: editText,
+          clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean),
+          staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean) }
       : s);
     setSnippets(updated); saveSnippets(updated); setEditingId(null);
   };
   const resetToDefault = (id) => {
     const def = DEFAULT_SNIPPETS.find(s => s.id === id);
     if (!def) return;
-    const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, actions: def.actions } : s);
+    const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, clinicianActions: def.clinicianActions, staffActions: def.staffActions } : s);
     setSnippets(updated); saveSnippets(updated);
-    if (editingId === id) { setEditText(def.text); setEditActions(def.actions.join("\n")); }
+    if (editingId === id) {
+      setEditText(def.text);
+      setEditActions(def.clinicianActions.join("\n"));
+      setEditStaffActions(def.staffActions.join("\n"));
+    }
   };
   const deleteCustom = (id) => {
     const updated = snippets.filter(s => s.id !== id);
@@ -317,10 +358,12 @@ export default function App() {
       : (newTrigger.group || "Other");
     const id = `custom_${Date.now()}`;
     const s = { id, group, trigger: newTrigger.trigger.trim(), text: newTrigger.text.trim(),
-      actions: newTrigger.actions.split("\n").map(a=>a.trim()).filter(Boolean), custom:true };
+      clinicianActions: newTrigger.actions.split("\n").map(a=>a.trim()).filter(Boolean),
+      staffActions: newTrigger.staffActions.split("\n").map(a=>a.trim()).filter(Boolean),
+      custom:true };
     const updated = [...snippets, s];
     setSnippets(updated); saveSnippets(updated);
-    setNewTrigger({ trigger:"", text:"", actions:"", group:"", newGroup:"", useNew:false });
+    setNewTrigger({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
     setShowAddCustom(false);
   };
 
@@ -428,44 +471,46 @@ export default function App() {
 
       {/* ── COMPOSE TAB ── */}
       {activeTab==="compose" && (
-        <div style={{ maxWidth:1300, margin:"0 auto", padding:"1.25rem 1rem", display:"grid", gridTemplateColumns:"26% 1fr 26%", gap:"1rem" }}>
+        <div style={{ maxWidth:1300, margin:"0 auto", padding:"1.25rem 1rem", display:"grid", gridTemplateColumns:"18% 1fr 26%", gap:"1rem" }}>
 
           {/* ── LEFT COLUMN: Click-to-add menu ── */}
           <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
-            <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"hidden" }}>
-              <div style={{ background:"#eff6ff", padding:"10px 14px", borderBottom:"1px solid #dbeafe" }}>
-                <span style={{ fontSize:12, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Add by clicking</span>
+            <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"visible" }}>
+              <div style={{ background:"#eff6ff", padding:"8px 12px", borderBottom:"1px solid #dbeafe", borderRadius:"12px 12px 0 0" }}>
+                <span style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Add by clicking</span>
               </div>
               {groups.map(({ name, snippets:gSnippets }) => (
                 <div key={name} style={{ borderBottom:"1px solid #f1f5f9" }}>
                   <button onClick={() => toggleLeft(name)} style={{
                     width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center",
-                    padding:"9px 14px", background:"none", border:"none", cursor:"pointer",
-                    fontSize:13, fontWeight:600, color:"#1e3a8a", textAlign:"left"
+                    padding:"8px 12px", background:"none", border:"none", cursor:"pointer",
+                    fontSize:12, fontWeight:600, color:"#1e3a8a", textAlign:"left"
                   }}>
                     <span>{name}</span>
-                    <span style={{ fontSize:10, color:"#93c5fd", transform: leftOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s" }}>▼</span>
+                    <span style={{ fontSize:9, color:"#93c5fd", transform: leftOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s", flexShrink:0 }}>▼</span>
                   </button>
                   {leftOpen[name] && (
                     <div style={{ background:"#f8fafc", borderTop:"1px solid #f1f5f9" }}>
                       {gSnippets.filter(s => !s.ephemeral).map(s => (
-                        <button key={s.id} onClick={() => addTrigger(s.id)} style={{
-                          width:"100%", textAlign:"left", padding:"7px 18px",
-                          background:"none", border:"none", cursor:"pointer",
-                          fontSize:12, color:"#374151", borderBottom:"1px solid #f1f5f9",
-                          transition:"background 0.15s"
-                        }}
-                          onMouseEnter={e => e.currentTarget.style.background="#dbeafe"}
-                          onMouseLeave={e => e.currentTarget.style.background="none"}
-                        >
-                          + {s.trigger}
-                        </button>
+                        <div key={s.id} style={{ position:"relative" }} className="trigger-row">
+                          <button onClick={() => addTrigger(s.id)} style={{
+                            width:"100%", textAlign:"left", padding:"6px 12px",
+                            background:"none", border:"none", cursor:"pointer",
+                            fontSize:11, color:"#374151", borderBottom:"1px solid #f1f5f9",
+                            transition:"background 0.15s", lineHeight:1.4
+                          }}
+                            onMouseEnter={e => e.currentTarget.style.background="#dbeafe"}
+                            onMouseLeave={e => e.currentTarget.style.background="none"}
+                          >
+                            + {s.trigger}
+                          </button>
+                          <div className="snippet-tooltip">{s.text}</div>
+                        </div>
                       ))}
-                      {/* Wildcard */}
                       <button onClick={() => addWildcard(name)} style={{
-                        width:"100%", textAlign:"left", padding:"7px 18px",
+                        width:"100%", textAlign:"left", padding:"6px 12px",
                         background:"none", border:"none", cursor:"pointer",
-                        fontSize:12, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9",
+                        fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9",
                         transition:"background 0.15s"
                       }}
                         onMouseEnter={e => e.currentTarget.style.background="#ede9fe"}
@@ -574,21 +619,23 @@ export default function App() {
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: Clinician To-Do ── */}
-          <div>
+          {/* ── RIGHT COLUMN: Clinician To Do + Staff To Do ── */}
+          <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
+
+            {/* Clinician To Do */}
             <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", position:"sticky", top:"1rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                   <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
-                <div style={{ fontSize:11, fontWeight:700, color:"#92400e", textTransform:"uppercase", letterSpacing:"0.05em" }}>Clinician To-Do</div>
+                <div style={{ fontSize:11, fontWeight:700, color:"#92400e", textTransform:"uppercase", letterSpacing:"0.05em" }}>Clinician To Do</div>
               </div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginBottom:14 }}>Required actions from this note</div>
-              {allActions.length === 0
-                ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1.5rem 0" }}>Action items appear here when relevant triggers are added</div>
-                : <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
-                    {allActions.map((a, i) => (
+              <div style={{ fontSize:11, color:"#9ca3af", marginBottom:12 }}>Lab orders · Rx · Referrals</div>
+              {allClinicianActions.length === 0
+                ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Clinician tasks appear here when relevant triggers are added</div>
+                : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {allClinicianActions.map((a, i) => (
                       <label key={i} style={{ display:"flex", alignItems:"flex-start", gap:9, cursor:"pointer" }}>
                         <input type="checkbox" checked={!!checkedActions[a]} onChange={() => setCheckedActions(p=>({...p,[a]:!p[a]}))}
                           style={{ marginTop:2, accentColor:"#2563eb", width:14, height:14, flexShrink:0 }} />
@@ -597,11 +644,52 @@ export default function App() {
                     ))}
                   </div>
               }
-              {allActions.length > 0 && (
-                <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid #f3f4f6", fontSize:11, color:"#9ca3af" }}>
-                  {Object.values(checkedActions).filter(Boolean).length} of {allActions.length} completed
+              {allClinicianActions.length > 0 && (
+                <div style={{ marginTop:12, paddingTop:12, borderTop:"1px solid #f3f4f6", fontSize:11, color:"#9ca3af" }}>
+                  {Object.values(checkedActions).filter(Boolean).length} of {allClinicianActions.length} completed
                 </div>
               )}
+            </div>
+
+            {/* Staff To Do */}
+            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Staff To Do</div>
+                </div>
+                {allStaffActions.length > 0 && (
+                  <button onClick={() => {
+                    const text = allStaffActions.map(a => `• ${a}`).join("\n");
+                    navigator.clipboard.writeText(text).then(() => { setStaffCopied(true); setTimeout(() => setStaffCopied(false), 2000); });
+                  }} style={{
+                    display:"flex", alignItems:"center", gap:5,
+                    background: staffCopied ? "#16a34a" : "#eff6ff",
+                    color: staffCopied ? "white" : "#1e40af",
+                    border:`1px solid ${staffCopied ? "#16a34a" : "#bfdbfe"}`,
+                    borderRadius:6, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:500, transition:"all 0.2s"
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      {staffCopied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
+                    </svg>
+                    {staffCopied ? "Copied!" : "Copy"}
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginBottom:12 }}>Scheduling · Patient contact</div>
+              {allStaffActions.length === 0
+                ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Staff tasks appear here when relevant triggers are added</div>
+                : <div style={{ background:"#f8fafc", borderRadius:8, padding:"10px 12px", border:"1px solid #e5e7eb" }}>
+                    {allStaffActions.map((a, i) => (
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom: i < allStaffActions.length-1 ? 8 : 0, alignItems:"flex-start" }}>
+                        <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:1 }}>•</span>
+                        <span style={{ fontSize:12, lineHeight:1.5, color:"#1f2937" }}>{a}</span>
+                      </div>
+                    ))}
+                  </div>
+              }
             </div>
           </div>
         </div>
@@ -681,8 +769,11 @@ export default function App() {
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing text</div>
                           <textarea value={editText} onChange={e=>setEditText(e.target.value)}
                             style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
-                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (one per line)</div>
+                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line)</div>
                           <textarea value={editActions} onChange={e=>setEditActions(e.target.value)}
+                            style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line)</div>
+                          <textarea value={editStaffActions} onChange={e=>setEditStaffActions(e.target.value)}
                             style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ display:"flex", gap:7, marginTop:9 }}>
                             <button onClick={saveEdit} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:6, padding:"6px 13px", cursor:"pointer" }}>Save</button>
@@ -713,9 +804,12 @@ export default function App() {
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing snippet text</div>
             <textarea value={newTrigger.text} onChange={e=>setNewTrigger(p=>({...p,text:e.target.value}))}
               placeholder="Text that appears in the note…" style={{ width:"100%", minHeight:80, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
-            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Clinician action items (one per line, optional)</div>
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line, optional)</div>
             <textarea value={newTrigger.actions} onChange={e=>setNewTrigger(p=>({...p,actions:e.target.value}))}
-              placeholder="Optional action items…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
+              placeholder="Optional clinician actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line, optional)</div>
+            <textarea value={newTrigger.staffActions} onChange={e=>setNewTrigger(p=>({...p,staffActions:e.target.value}))}
+              placeholder="Optional staff actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:5 }}>Lab group</div>
             <div style={{ display:"flex", gap:8, marginBottom:8, flexWrap:"wrap" }}>
               {existingGroups.map(g => (
@@ -840,6 +934,14 @@ export default function App() {
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
         @media(max-width:900px) { .three-col { grid-template-columns:1fr !important; } }
+        .trigger-row { position:relative; }
+        .snippet-tooltip {
+          display:none; position:absolute; left:100%; top:0; z-index:50;
+          background:#1e3a8a; color:white; font-size:11px; line-height:1.5;
+          padding:8px 12px; border-radius:8px; width:260px; pointer-events:none;
+          box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:6px;
+        }
+        .trigger-row:hover .snippet-tooltip { display:block; }
       `}</style>
       </div>{/* end frame */}
     </div>
