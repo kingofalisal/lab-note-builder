@@ -87,85 +87,7 @@ function getConflicts(triggeredIds, snippets) {
   return conflicts;
 }
 
-// ── Background SVG ───────────────────────────────────────────────────────────
-const BG_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='900' height='600' viewBox='0 0 900 600'>
-  <g stroke='%231d4ed8' stroke-width='1' fill='none' opacity='0.07'>
-    <!-- Microscope -->
-    <g transform='translate(60,60)'>
-      <rect x='20' y='60' width='30' height='50' rx='2'/>
-      <rect x='25' y='55' width='20' height='10' rx='1'/>
-      <line x1='35' y1='55' x2='35' y2='20'/>
-      <circle cx='35' cy='15' r='8'/>
-      <line x1='10' y1='110' x2='60' y2='110'/>
-      <line x1='15' y1='110' x2='15' y2='120'/>
-      <line x1='55' y1='110' x2='55' y2='120'/>
-      <line x1='10' y1='120' x2='60' y2='120'/>
-    </g>
-    <!-- Test tubes -->
-    <g transform='translate(780,50)'>
-      <rect x='0' y='0' width='12' height='40' rx='6'/>
-      <line x1='0' y1='15' x2='12' y2='15'/>
-      <rect x='20' y='10' width='12' height='40' rx='6'/>
-      <line x1='20' y1='25' x2='32' y2='25'/>
-      <rect x='40' y='5' width='12' height='35' rx='6'/>
-    </g>
-    <!-- Heart rate / ECG line -->
-    <g transform='translate(300,30)'>
-      <polyline points='0,20 30,20 40,5 50,35 60,10 70,30 80,20 120,20'/>
-    </g>
-    <!-- Blood drop -->
-    <g transform='translate(820,200)'>
-      <path d='M15,0 Q30,20 30,30 A15,15 0 0,1 0,30 Q0,20 15,0Z'/>
-    </g>
-    <!-- DNA helix simplified -->
-    <g transform='translate(50,300)'>
-      <path d='M10,0 C30,20 10,40 30,60 C50,80 30,100 50,120'/>
-      <path d='M30,0 C10,20 30,40 10,60 C-10,80 10,100 -10,120'/>
-      <line x1='10' y1='15' x2='30' y2='25'/>
-      <line x1='22' y1='38' x2='18' y2='48'/>
-      <line x1='10' y1='65' x2='30' y2='75'/>
-      <line x1='22' y1='88' x2='18' y2='98'/>
-    </g>
-    <!-- Beaker -->
-    <g transform='translate(750,350)'>
-      <path d='M10,0 L10,30 L0,60 L50,60 L40,30 L40,0 Z'/>
-      <line x1='10' y1='0' x2='40' y2='0'/>
-      <line x1='5' y1='45' x2='45' y2='45'/>
-      <line x1='38' y1='5' x2='48' y2='5'/>
-    </g>
-    <!-- Clipboard / chart -->
-    <g transform='translate(400,450)'>
-      <rect x='0' y='10' width='60' height='75' rx='3'/>
-      <rect x='20' y='5' width='20' height='12' rx='3'/>
-      <line x1='10' y1='30' x2='50' y2='30'/>
-      <line x1='10' y1='42' x2='50' y2='42'/>
-      <line x1='10' y1='54' x2='35' y2='54'/>
-      <line x1='10' y1='66' x2='42' y2='66'/>
-    </g>
-    <!-- Syringe -->
-    <g transform='translate(150,500)'>
-      <rect x='10' y='5' width='50' height='15' rx='2'/>
-      <line x1='0' y1='12' x2='10' y2='12'/>
-      <line x1='60' y1='8' x2='75' y2='12'/>
-      <line x1='75' y1='12' x2='85' y2='12'/>
-      <line x1='20' y1='5' x2='20' y2='20'/>
-      <line x1='35' y1='5' x2='35' y2='20'/>
-      <line x1='50' y1='5' x2='50' y2='20'/>
-    </g>
-    <!-- Molecule -->
-    <g transform='translate(600,120)'>
-      <circle cx='30' cy='30' r='10'/>
-      <circle cx='60' cy='15' r='7'/>
-      <circle cx='60' cy='45' r='7'/>
-      <circle cx='10' cy='15' r='7'/>
-      <circle cx='10' cy='45' r='7'/>
-      <line x1='30' y1='30' x2='60' y2='15'/>
-      <line x1='30' y1='30' x2='60' y2='45'/>
-      <line x1='30' y1='30' x2='10' y2='15'/>
-      <line x1='30' y1='30' x2='10' y2='45'/>
-    </g>
-  </g>
-</svg>`;
+
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function App() {
@@ -174,9 +96,22 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("compose");
   const [triggered, setTriggered] = useState([]);
   const [isListening, setIsListening] = useState(false);
-  const [matchStatus, setMatchStatus] = useState(null); // {text, type} type=matched|nomatch|error|classifying
+  const [matchStatus, setMatchStatus] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [leftOpen, setLeftOpen] = useState({});
+  const [showNewNoteWarning, setShowNewNoteWarning] = useState(false);
+  const [skipNewNoteWarning, setSkipNewNoteWarning] = useState(() => {
+    try { return localStorage.getItem("lab_skip_new_note_warning") === "true"; } catch { return false; }
+  });
+  const [dontShowAgainChecked, setDontShowAgainChecked] = useState(false);
+
+  const groups = getGroups(snippets);
+
+  // Left accordion: all groups open by default
+  const [leftOpen, setLeftOpen] = useState(() => {
+    const initial = {};
+    getGroups(loadSnippets()).forEach(g => { initial[g.name] = true; });
+    return initial;
+  });
   const [manageOpen, setManageOpen] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
@@ -193,7 +128,6 @@ export default function App() {
   const continuousRef = useRef(false);
 
   const conflicts = getConflicts(triggered, snippets);
-  const groups = getGroups(snippets);
 
   const allActions = [];
   triggered.forEach(id => {
@@ -319,7 +253,31 @@ export default function App() {
   };
 
   const removeTriggered = (idx) => setTriggered(prev => prev.filter((_, i) => i !== idx));
-  const clearAll = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); };
+
+  const doNewNote = () => {
+    setTriggered([]);
+    setCheckedActions({});
+    setMatchStatus(null);
+    setCopied(false);
+  };
+
+  const handleNewNote = () => {
+    if (triggered.length === 0) { doNewNote(); return; }
+    if (skipNewNoteWarning) { doNewNote(); return; }
+    setDontShowAgainChecked(false);
+    setShowNewNoteWarning(true);
+  };
+
+  const confirmNewNote = () => {
+    if (dontShowAgainChecked) {
+      setSkipNewNoteWarning(true);
+      try { localStorage.setItem("lab_skip_new_note_warning", "true"); } catch {}
+    }
+    setShowNewNoteWarning(false);
+    doNewNote();
+  };
+
+  const clearAll = () => doNewNote();
 
   const copyNote = () => {
     navigator.clipboard.writeText(fullNote).then(() => {
@@ -418,7 +376,10 @@ export default function App() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:"100vh", background:`url("data:image/svg+xml,${BG_SVG}") center/cover fixed, #eff6ff`, fontFamily:"'Inter',system-ui,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"#eff6ff", fontFamily:"'Inter',system-ui,sans-serif" }}>
+
+      {/* ── Outer frame centering wrapper ── */}
+      <div style={{ maxWidth:1280, margin:"0 auto", minHeight:"100vh", background:"white", boxShadow:"0 0 40px rgba(30,64,175,0.08)" }}>
 
       {/* ── Header ── */}
       <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)", padding:"0 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", height:58, boxShadow:"0 2px 8px rgba(30,64,175,0.3)" }}>
@@ -432,17 +393,36 @@ export default function App() {
           </div>
         </div>
 
-        {/* Slider toggle */}
-        <div style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:30, padding:3, gap:2 }}>
-          {[["compose","Compose Note"],["manage","Manage Snippets"]].map(([key,label]) => (
-            <button key={key} onClick={() => setActiveTab(key)} style={{
-              background: activeTab===key ? "white" : "transparent",
-              color: activeTab===key ? "#1e40af" : "rgba(255,255,255,0.85)",
-              border:"none", borderRadius:26, padding:"5px 16px", cursor:"pointer",
-              fontSize:13, fontWeight: activeTab===key ? 600 : 400,
-              transition:"all 0.2s", boxShadow: activeTab===key ? "0 1px 4px rgba(0,0,0,0.15)" : "none"
-            }}>{label}</button>
-          ))}
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          {/* New Note button */}
+          <button onClick={handleNewNote} style={{
+            display:"flex", alignItems:"center", gap:6,
+            background:"rgba(255,255,255,0.15)", color:"white",
+            border:"1px solid rgba(255,255,255,0.3)", borderRadius:7,
+            padding:"5px 14px", cursor:"pointer", fontSize:13, fontWeight:500,
+            transition:"background 0.15s"
+          }}
+            onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.25)"}
+            onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,0.15)"}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            New note
+          </button>
+
+          {/* Slider toggle */}
+          <div style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:30, padding:3, gap:2 }}>
+            {[["compose","Compose Note"],["manage","Manage Snippets"]].map(([key,label]) => (
+              <button key={key} onClick={() => setActiveTab(key)} style={{
+                background: activeTab===key ? "white" : "transparent",
+                color: activeTab===key ? "#1e40af" : "rgba(255,255,255,0.85)",
+                border:"none", borderRadius:26, padding:"5px 16px", cursor:"pointer",
+                fontSize:13, fontWeight: activeTab===key ? 600 : 400,
+                transition:"all 0.2s", boxShadow: activeTab===key ? "0 1px 4px rgba(0,0,0,0.15)" : "none"
+              }}>{label}</button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -824,12 +804,44 @@ export default function App() {
         </div>
       )}
 
+      {/* ── MODAL: New Note warning ── */}
+      {showNewNoteWarning && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200 }}>
+          <div style={{ background:"white", borderRadius:14, padding:"1.75rem", width:400, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a" }}>Start a new note?</div>
+            </div>
+            <div style={{ fontSize:13, color:"#4b5563", lineHeight:1.6, marginBottom:20 }}>
+              This will clear the current note and all triggered items. Your snippets and settings in Manage Snippets will not be affected.
+            </div>
+            <label style={{ display:"flex", alignItems:"center", gap:9, marginBottom:20, cursor:"pointer" }}>
+              <input type="checkbox" checked={dontShowAgainChecked} onChange={e => setDontShowAgainChecked(e.target.checked)}
+                style={{ width:15, height:15, accentColor:"#2563eb", flexShrink:0 }} />
+              <span style={{ fontSize:13, color:"#6b7280" }}>Don't show this warning again</span>
+            </label>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={confirmNewNote} style={{ fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"8px 18px", cursor:"pointer", fontWeight:500 }}>
+                Clear and start new
+              </button>
+              <button onClick={() => setShowNewNoteWarning(false)} style={{ fontSize:13, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"8px 18px", cursor:"pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
         @media(max-width:900px) { .three-col { grid-template-columns:1fr !important; } }
       `}</style>
+      </div>{/* end frame */}
     </div>
   );
 }
