@@ -133,7 +133,17 @@ function loadSnippets(deletedIds) {
 }
 function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v3", JSON.stringify(snippets)); }
 function loadHeaderFooter() {
-  try { const s=localStorage.getItem("lab_headerfooter"); if (!s) return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; return JSON.parse(s); } catch { return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; }
+  try {
+    // One-time migration: clear headerfooter cache on v3 upgrade
+    if (!localStorage.getItem("lab_hf_migrated_v3")) {
+      localStorage.removeItem("lab_headerfooter");
+      localStorage.setItem("lab_hf_migrated_v3", "1");
+      return { header: DEFAULT_HEADER, footer: DEFAULT_FOOTER };
+    }
+    const s = localStorage.getItem("lab_headerfooter");
+    if (!s) return { header: DEFAULT_HEADER, footer: DEFAULT_FOOTER };
+    return JSON.parse(s);
+  } catch { return { header: DEFAULT_HEADER, footer: DEFAULT_FOOTER }; }
 }
 function saveHeaderFooter(hf) { localStorage.setItem("lab_headerfooter", JSON.stringify(hf)); }
 
