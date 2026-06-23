@@ -333,6 +333,12 @@ export default function App() {
   const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggingGroup, setDraggingGroup] = useState(null);
   const [stats, setStats] = useState({ visitors: "…", notes: "…" });
+  const [showPhiWarning, setShowPhiWarning] = useState(() => {
+    try { return !localStorage.getItem("lab_phi_acknowledged"); } catch { return true; }
+  });
+  const [phiChecked, setPhiChecked] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const devMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("devmode") === "true";
   const recognitionRef = useRef(null);
   const matchTimerRef = useRef(null);
   const continuousRef = useRef(false);
@@ -970,6 +976,16 @@ export default function App() {
                   </div>
               }
             </div>
+
+            {/* PHI persistent reminder — sticky at bottom of center column */}
+            <div style={{ position:"sticky", bottom:8, zIndex:10 }}>
+              <div style={{ padding:"8px 14px", background:"#fef9c3", borderRadius:8, border:"1px solid #fde047", display:"flex", alignItems:"center", gap:8, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#854d0e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span style={{ fontSize:11, color:"#854d0e", lineHeight:1.5 }}><strong>No PHI.</strong> Do not enter patient names, dates of birth, MRN, or any other identifying information.</span>
+              </div>
+            </div>
           </div>
 
           {/* RIGHT COLUMN */}
@@ -1034,7 +1050,8 @@ export default function App() {
               }
             </div>
 
-            {/* Stats — quiet strip */}
+            {/* Stats — quiet strip, developer only */}
+            {devMode && (
             <div style={{ borderTop:"0.5px solid #e5e7eb", paddingTop:12 }}>
               <div style={{ display:"flex", justifyContent:"space-around", alignItems:"center" }}>
                 <div style={{ textAlign:"center" }}>
@@ -1049,6 +1066,7 @@ export default function App() {
               </div>
               <div style={{ fontSize:10, color:"#d1d5db", textAlign:"center", marginTop:6 }}>Lab Results Note Builder · site activity</div>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -1235,8 +1253,113 @@ export default function App() {
         </div>
       )}
 
-      {/* ── TOUR PROMPT (first visit) ── */}
-      {showTourPrompt && !tourActive && (
+      {/* ── FOOTER ── */}
+      <div style={{ borderTop:"0.5px solid #e5e7eb", padding:"10px 1.5rem", display:"flex", justifyContent:"center", alignItems:"center", gap:"2rem", background:"#f8fafc" }}>
+        <button onClick={() => setShowAbout(true)} style={{ fontSize:12, color:"#6b7280", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>About</button>
+        <span style={{ fontSize:11, color:"#d1d5db" }}>|</span>
+        <span style={{ fontSize:11, color:"#9ca3af" }}>Lab Results Note Builder v9</span>
+      </div>
+
+      {/* ── MODAL: PHI Warning (first visit) ── */}
+      {showPhiWarning && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:350 }}>
+          <div style={{ background:"white", borderRadius:16, padding:"2rem", width:440, maxWidth:"92vw", boxShadow:"0 12px 40px rgba(0,0,0,0.2)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+              <div style={{ width:44, height:44, borderRadius:"50%", background:"#fef9c3", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#854d0e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize:16, fontWeight:700, color:"#1e3a8a" }}>Important Privacy Notice</div>
+                <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>Please read before using this tool</div>
+              </div>
+            </div>
+            <div style={{ fontSize:13, color:"#374151", lineHeight:1.7, marginBottom:20 }}>
+              <p style={{ marginBottom:10 }}>This tool is <strong>not HIPAA-compliant</strong> and is not designed to store or process protected health information (PHI).</p>
+              <p style={{ marginBottom:10 }}>Do <strong>not</strong> enter any patient identifiers including:</p>
+              <ul style={{ paddingLeft:20, marginBottom:10 }}>
+                <li>Patient names or initials</li>
+                <li>Dates of birth or ages</li>
+                <li>Medical record numbers (MRN)</li>
+                <li>Dates of service</li>
+                <li>Any other identifying information</li>
+              </ul>
+              <p>This tool generates <strong>template text only</strong>. All patient-specific values should be added after pasting into your EMR.</p>
+            </div>
+            <label style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20, cursor:"pointer" }}>
+              <input type="checkbox" checked={phiChecked} onChange={e => setPhiChecked(e.target.checked)} style={{ width:16, height:16, accentColor:"#2563eb", flexShrink:0 }} />
+              <span style={{ fontSize:13, color:"#374151" }}>I understand — I will not enter any patient identifiers</span>
+            </label>
+            <button disabled={!phiChecked} onClick={() => {
+              setShowPhiWarning(false);
+              try { localStorage.setItem("lab_phi_acknowledged","1"); } catch {}
+            }} style={{ width:"100%", background: phiChecked ? "#2563eb" : "#93c5fd", color:"white", border:"none", borderRadius:8, padding:"10px", cursor: phiChecked ? "pointer" : "default", fontSize:13, fontWeight:500 }}>
+              Continue to Lab Results Note Builder
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: About ── */}
+      {showAbout && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
+          <div style={{ background:"white", borderRadius:16, padding:"2rem", width:480, maxWidth:"92vw", boxShadow:"0 12px 40px rgba(0,0,0,0.2)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="256" height="256" rx="57" fill="#1e40af"/>
+                  <path d="M100,76 L100,144 Q100,157 90,173 L64,211 Q61,217 70,217 L186,217 Q195,217 192,211 L166,173 Q156,157 156,144 L156,76" fill="none" stroke="white" strokeWidth="9" strokeLinejoin="round" strokeLinecap="round"/>
+                  <line x1="86" y1="76" x2="170" y2="76" stroke="white" strokeWidth="9" strokeLinecap="round"/>
+                  <path d="M104,180 Q94,165 90,173 L64,211 L192,211 L166,173 Q162,165 152,180 Z" fill="#60a5fa" opacity="0.75"/>
+                  <circle cx="128" cy="193" r="6" fill="#bfdbfe" opacity="0.85"/>
+                  <circle cx="114" cy="160" r="8" fill="none" stroke="#93c5fd" strokeWidth="4"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize:16, fontWeight:700, color:"#1e3a8a" }}>Lab Results Note Builder</div>
+                  <div style={{ fontSize:12, color:"#6b7280" }}>Version 9</div>
+                </div>
+              </div>
+              <button onClick={() => setShowAbout(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"#9ca3af", fontSize:20, lineHeight:1, padding:4 }}>×</button>
+            </div>
+
+            <div style={{ fontSize:13, color:"#374151", lineHeight:1.7 }}>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Developer</div>
+                <div>Andrew Schechtman, M.D.</div>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>About</div>
+                <div>Lab Results Note Builder helps clinicians quickly compose patient-facing lab result messages using voice or click-based trigger phrases that generate pre-written, customizable snippets.</div>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Does this tool use AI?</div>
+                <div style={{ fontSize:12, color:"#374151", lineHeight:1.6 }}>This tool uses AI only to match spoken phrases to pre-written lab result comments. The text outputs are fixed and consistent — they are not generated by AI.</div>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Disclaimer</div>
+                <div style={{ fontSize:12, color:"#6b7280" }}>This tool is provided as-is, without warranty of any kind. Use at your own risk. The developer makes no representations regarding the accuracy, completeness, or suitability of generated content for any clinical purpose. Users are solely responsible for reviewing and verifying all content before sending to patients. This tool is not a medical device and is not intended to replace clinical judgment.</div>
+              </div>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Credits</div>
+                <div style={{ fontSize:12, color:"#6b7280" }}>Built with <a href="https://claude.ai" target="_blank" rel="noreferrer" style={{ color:"#2563eb" }}>Claude</a> by Anthropic</div>
+              </div>
+            </div>
+
+            <div style={{ borderTop:"1px solid #f3f4f6", paddingTop:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <a href="https://coming-soon" onClick={e => { e.preventDefault(); alert("Contact form coming soon!"); }}
+                style={{ fontSize:13, color:"#2563eb", textDecoration:"none", display:"flex", alignItems:"center", gap:5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Report a bug, request a new feature, or contact developer
+              </a>
+              <button onClick={() => setShowAbout(false)} style={{ fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 18px", cursor:"pointer" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TOUR PROMPT (first visit, only after PHI acknowledged) ── */}
+      {showTourPrompt && !tourActive && !showPhiWarning && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
           <div style={{ background:"white", borderRadius:16, padding:"2rem", width:380, maxWidth:"92vw", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", textAlign:"center" }}>
             <div style={{ width:52, height:52, borderRadius:"50%", background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem" }}>
