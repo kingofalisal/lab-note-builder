@@ -482,7 +482,20 @@ export default function App() {
       {/* Header */}
       <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)", padding:"0 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", height:58, boxShadow:"0 2px 8px rgba(30,64,175,0.3)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+            <rect width="256" height="256" rx="57" fill="white" opacity="0.15"/>
+            <path d="M100,76 L100,144 Q100,157 90,173 L64,211 Q61,217 70,217 L186,217 Q195,217 192,211 L166,173 Q156,157 156,144 L156,76" fill="none" stroke="white" strokeWidth="9" strokeLinejoin="round" strokeLinecap="round"/>
+            <line x1="86" y1="76" x2="170" y2="76" stroke="white" strokeWidth="9" strokeLinecap="round"/>
+            <path d="M104,180 Q94,165 90,173 L64,211 L192,211 L166,173 Q162,165 152,180 Z" fill="#60a5fa" opacity="0.75"/>
+            <line x1="104" y1="180" x2="152" y2="180" stroke="#93c5fd" strokeWidth="4" strokeLinecap="round"/>
+            <circle cx="90" cy="198" r="8" fill="#bfdbfe" opacity="0.85"/>
+            <circle cx="128" cy="193" r="6" fill="#bfdbfe" opacity="0.85"/>
+            <circle cx="162" cy="200" r="5" fill="#bfdbfe" opacity="0.85"/>
+            <circle cx="114" cy="160" r="8" fill="none" stroke="#93c5fd" strokeWidth="4"/>
+            <circle cx="138" cy="142" r="7" fill="none" stroke="#93c5fd" strokeWidth="3.5"/>
+            <circle cx="120" cy="122" r="5" fill="none" stroke="#93c5fd" strokeWidth="3"/>
+            <circle cx="140" cy="106" r="4" fill="none" stroke="#93c5fd" strokeWidth="2.5"/>
+          </svg>
           <div>
             <span style={{ color:"white", fontWeight:700, fontSize:16, letterSpacing:"-0.01em" }}>Lab Results Note Builder</span>
             <span style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginLeft:10, fontStyle:"italic" }}>Speedy lab results notes in your words</span>
@@ -575,7 +588,7 @@ export default function App() {
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {/* Mic */}
             <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.05em" }}>Voice Input</div>
+              <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.05em" }}>Add with Voice</div>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                 <button onClick={isListening ? stopListening : startListening} style={{ width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0, background: isListening ? "#ef4444" : "#2563eb", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)", transition:"all 0.2s" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
