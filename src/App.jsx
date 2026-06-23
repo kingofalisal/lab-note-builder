@@ -992,13 +992,13 @@ export default function App() {
               }
             </div>
 
-            {/* PHI persistent reminder — sticky at bottom of center column */}
-            <div style={{ position:"sticky", bottom:8, zIndex:10 }}>
-              <div style={{ padding:"8px 14px", background:"#fef9c3", borderRadius:8, border:"1px solid #fde047", display:"flex", alignItems:"center", gap:8, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#854d0e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            {/* PHI persistent reminder — Option C: subtle caption style */}
+            <div style={{ position:"sticky", bottom:8, zIndex:10, textAlign:"center" }}>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 10px" }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
-                <span style={{ fontSize:11, color:"#854d0e", lineHeight:1.5 }}><strong>No PHI.</strong> Do not enter patient names, dates of birth, MRN, or any other identifying information.</span>
+                <span style={{ fontSize:10, color:"#9ca3af", fontStyle:"italic" }}>No PHI — do not enter patient identifiers</span>
               </div>
             </div>
           </div>
@@ -1376,11 +1376,8 @@ export default function App() {
       {/* ── MODAL: Feedback / Contact form ── */}
       {showFeedback && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
-          <div style={{ background:"white", borderRadius:16, width:"min(640px, 95vw)", maxHeight:"90vh", display:"flex", flexDirection:"column", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", overflow:"hidden" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", borderBottom:"1px solid #e5e7eb", background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)" }}>
-              <span style={{ fontSize:14, fontWeight:600, color:"white" }}>Report a bug · Request a feature · Contact</span>
-              <button onClick={() => setShowFeedback(false)} style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", color:"white", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
-            </div>
+          <div style={{ background:"white", borderRadius:16, width:"min(660px, 95vw)", display:"flex", flexDirection:"column", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", overflow:"hidden", position:"relative" }}>
+            <button onClick={() => setShowFeedback(false)} style={{ position:"absolute", top:10, right:10, background:"rgba(0,0,0,0.15)", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", color:"white", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", zIndex:1 }}>×</button>
             <iframe
               id="JotFormIFrame-261735977946073"
               title="Lab Results Note Builder Feedback Form"
@@ -1389,8 +1386,8 @@ export default function App() {
               allow="geolocation; microphone; camera; fullscreen; payment"
               src="https://form.jotform.com/261735977946073"
               frameBorder="0"
-              style={{ minWidth:"100%", maxWidth:"100%", height:"539px", border:"none", flex:1 }}
-              scrolling="no"
+              style={{ width:"100%", height:"620px", border:"none" }}
+              scrolling="yes"
             />
           </div>
         </div>
