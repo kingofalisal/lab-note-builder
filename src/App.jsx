@@ -323,6 +323,7 @@ export default function App() {
   const [importDrag, setImportDrag] = useState(false);
   const [leftColWidth, setLeftColWidth] = useState(999);
   const leftColDivRef = useRef(null);
+  const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggingGroup, setDraggingGroup] = useState(null);
   const [stats, setStats] = useState({ visitors: "…", notes: "…" });
   const recognitionRef = useRef(null);
