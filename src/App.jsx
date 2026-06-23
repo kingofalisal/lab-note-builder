@@ -244,8 +244,11 @@ const TOUR_STEPS = [
   { ref:"expandArrow",   inHeader:false, title:"Expand for abnormals",
     body:"Click the ▼ arrow to see options for abnormal results. Here we've added 'Mild anemia needs labs' — notice how both the Clinician To Do and Staff To Do panels populate automatically.",
     requireCompose:true, addSnippetId:"mild_anemia", expandGroup:"CBC" },
+  { ref:"wildcardRef",   inHeader:false, title:"Wildcard option",
+    body:"The wildcard option is a placeholder for free text comments. You can add your comments in the Patient note preview here or after pasting into your EMR.",
+    requireCompose:true, expandGroup:"Microalbumin" },
   { ref:"dragHandle",    inHeader:false, title:"Reorder labs",
-    body:"Grip the handle to rearrange labs in the left column to match your workflow. Your preferred order is saved automatically.",
+    body:"Grip the handle next to any lab name to rearrange the left column to match your workflow. Your preferred order is saved automatically.",
     requireCompose:true },
   { ref:"clinicianTodo", inHeader:false, title:"Clinician to do",
     body:"When your comments include prescriptions, new diagnoses, or follow-up lab orders, they queue up here as reminders so you don't miss them.",
@@ -254,7 +257,7 @@ const TOUR_STEPS = [
     body:"When your comments include actions for your staff like scheduling a follow-up visit, those queue up here so you can copy and paste that into a note to your staff.",
     requireCompose:true },
   { ref:"notePreview",   inHeader:false, title:"Edit your note",
-    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying.",
+    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying. Hover over a bullet to delete it.",
     requireCompose:true },
   { ref:"copyBtn",       inHeader:false, title:"Copy to your EMR",
     body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.",
@@ -364,7 +367,7 @@ export default function App() {
   })();
 
   const fullNote = noteLines.length > 0
-    ? `${hf.header}\n\n${noteLines.map((l, i) => `• ${noteEdits[i] !== undefined ? noteEdits[i] : l.text}`).join("\n\n")}\n\n${hf.footer}`
+    ? `${hf.header}\n\n${noteLines.map((l, i) => `• ${noteEdits[i] !== undefined ? noteEdits[i] : l.text}`).join("\n")}\n\n${hf.footer}`
     : "";
 
   // ── Speech ────────────────────────────────────────────────────────────────
@@ -713,7 +716,7 @@ export default function App() {
                     onDragOver={e => handleDragOver(e, name)}
                     onDragLeave={() => setDragOverGroup(null)}
                     onDrop={e => handleDrop(e, name)}
-                    ref={groupIdx === 0 ? el => tourRefs.current.dragHandle = el : null}
+                    ref={name === "Iron studies" ? el => tourRefs.current.dragHandle = el : null}
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div style={{ display:"flex", alignItems:"center" }}>
                       {/* Six-dot grip handle */}
@@ -730,12 +733,14 @@ export default function App() {
                       {/* Header = default trigger clickable */}
                       <div className="trigger-row" style={{ flex:1, position:"relative" }}>
                         <button onClick={() => defaultSnippet && addTrigger(defaultSnippet.id)}
-                          style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color: justAdded ? "#16a34a" : "#1e3a8a", display:"flex", alignItems:"center", gap:5, transition:"color 0.2s" }}
+                          style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color: justAdded ? "#16a34a" : "#1e3a8a", display:"flex", alignItems:"center", gap:5, transition:"color 0.2s", whiteSpace:"nowrap", overflow:"hidden", minWidth:0 }}
                           onMouseEnter={e=>{ if(!justAdded) e.currentTarget.style.color="#2563eb"; }} onMouseLeave={e=>{ if(!justAdded) e.currentTarget.style.color="#1e3a8a"; }}>
+                          <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block" }}>
                           {justAdded
-                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{name}</>
+                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{name}</>
                             : <>+ {name}</>
                           }
+                          </span>
                         </button>
                         {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
                       </div>
@@ -765,6 +770,7 @@ export default function App() {
                           );
                         })}
                         <button onClick={() => addWildcard(name)}
+                          ref={name === "Microalbumin" ? el => tourRefs.current.wildcardRef = el : null}
                           style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
                           onMouseEnter={e=>e.currentTarget.style.background="#ede9fe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
                           + {name}: ***
@@ -859,7 +865,7 @@ export default function App() {
                       const currentText = noteEdits[i] !== undefined ? noteEdits[i] : line.text;
                       const isEdited = noteEdits[i] !== undefined && noteEdits[i] !== line.text;
                       return (
-                        <div key={i} style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start" }}>
+                        <div key={i} className="note-bullet-row" style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start", position:"relative" }}>
                           <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:4 }}>•</span>
                           <div style={{ flex:1, position:"relative" }}>
                             <textarea
@@ -886,6 +892,20 @@ export default function App() {
                                 style={{ position:"absolute", top:2, right:2, background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:13, lineHeight:1, padding:0 }}>↺</button>
                             )}
                           </div>
+                          {/* Hover delete button */}
+                          <button
+                            className="bullet-delete-btn"
+                            title="Remove this result from note"
+                            onClick={() => {
+                              const triggeredIdx = triggered.lastIndexOf(line.id);
+                              if (triggeredIdx !== -1) {
+                                setTriggered(prev => { const n=[...prev]; n.splice(triggeredIdx,1); return n; });
+                              }
+                              setNoteEdits(prev => { const n={...prev}; delete n[i]; return n; });
+                            }}
+                            style={{ position:"absolute", top:2, right:-22, width:18, height:18, borderRadius:"50%", background:"#fee2e2", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", opacity:0, transition:"opacity 0.15s", flexShrink:0 }}>
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
                         </div>
                       );
                     })}
@@ -1249,6 +1269,7 @@ export default function App() {
         .trigger-row { position:relative; }
         .snippet-tooltip { display:none; position:absolute; left:100%; top:0; z-index:50; background:#1e3a8a; color:white; font-size:11px; line-height:1.5; padding:8px 12px; border-radius:8px; width:260px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:6px; }
         .trigger-row:hover .snippet-tooltip { display:block; }
+        .note-bullet-row:hover .bullet-delete-btn { opacity:1 !important; }
       `}</style>
       </div>
     </div>
