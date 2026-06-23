@@ -275,7 +275,7 @@ const TOUR_STEPS = [
     body:"When your comments include actions for your staff like scheduling a follow-up visit, those queue up here so you can copy and paste that into a note to your staff.",
     requireCompose:true },
   { ref:"notePreview",   inHeader:false, title:"Edit your note",
-    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording. Hover over a bullet and click × (in red) to delete it.",
+    body:<>Each bullet in the note preview is editable — click into any bullet to adjust the wording. Hover over a bullet and click the <span style={{color:"#dc2626",fontWeight:700}}>×</span> button to delete it.</>,
     requireCompose:true },
   { ref:"copyBtn",       inHeader:false, title:"Copy to your EMR",
     body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.",
