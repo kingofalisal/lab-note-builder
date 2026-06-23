@@ -791,7 +791,9 @@ export default function App() {
                     onDragLeave={() => setDragOverGroup(null)}
                     onDrop={e => handleDrop(e, name)}
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
-                    <div style={{ display:"flex", alignItems:"center" }}>
+                    <div className="lab-row" style={{ display:"flex", alignItems:"center", position:"relative" }}>
+                      {/* Tooltip on outer row so it aligns consistently with/without expand arrow */}
+                      {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
                       {/* Six-dot grip handle */}
                       <div style={{ padding:"0 7px 0 9px", cursor:"grab", flexShrink:0, display:"flex", alignItems:"center" }} title="Drag to reorder" aria-hidden="true">
                         <svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -817,7 +819,6 @@ export default function App() {
                           })()}
                           </span>
                         </button>
-                        {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
                       </div>
                       {/* Expand arrow */}
                       {otherSnippets.length > 0 && (
@@ -1511,8 +1512,8 @@ export default function App() {
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
         .trigger-row { position:relative; }
-        .snippet-tooltip { display:none; position:absolute; left:100%; top:0; z-index:50; background:#1e3a8a; color:white; font-size:11px; line-height:1.5; padding:8px 12px; border-radius:8px; width:260px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:6px; }
-        .trigger-row:hover .snippet-tooltip { display:block; }
+        .snippet-tooltip { display:none; position:absolute; left:100%; top:0; z-index:50; background:#1e3a8a; color:white; font-size:11px; line-height:1.5; padding:8px 12px; border-radius:8px; width:260px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:8px; }
+        .lab-row:hover .snippet-tooltip { display:block; }
         .note-bullet-row:hover .bullet-delete-btn { opacity:1 !important; }
       `}</style>
       </div>
