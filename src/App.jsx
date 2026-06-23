@@ -742,7 +742,7 @@ export default function App() {
                       {/* Expand arrow */}
                       {otherSnippets.length > 0 && (
                         <button onClick={() => setLeftExpanded(p=>({...p,[name]:!p[name]}))}
-                          ref={groupIdx === 3 ? el => tourRefs.current.expandArrow = el : null}
+                          ref={name === "CBC" ? el => tourRefs.current.expandArrow = el : null}
                           style={{ padding:"8px 10px", background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:10, transform: expanded?"rotate(180deg)":"rotate(0)", transition:"0.2s", flexShrink:0 }}>▼</button>
                       )}
                     </div>
@@ -1189,11 +1189,15 @@ export default function App() {
         const hl = rect ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 } : null;
         const ww = window.innerWidth; const wh = window.innerHeight;
 
-        // Smart tooltip positioning: place below target, flip above if near bottom
-        const tipW = 300;
+        // Smart tooltip positioning: place below target, flip above if near bottom, clamp to viewport
+        const tipW = 300; const tipH = 200;
         const tipLeft = hl ? Math.max(8, Math.min(hl.left, ww - tipW - 8)) : ww/2 - tipW/2;
         const belowTop = hl ? hl.top + hl.height + 12 : wh/2;
-        const tipTop = (hl && belowTop + 180 > wh) ? hl.top - 200 : belowTop;
+        const aboveTop = hl ? hl.top - tipH - 12 : wh/2;
+        const fitsBelow = belowTop + tipH <= wh - 8;
+        const fitsAbove = aboveTop >= 8;
+        const rawTop = fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop);
+        const tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
 
         const overlayColor = "rgba(0,0,0,0.52)";
         return (
