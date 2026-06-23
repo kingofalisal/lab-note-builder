@@ -357,8 +357,14 @@ export default function App() {
     if (!tourActive) return;
     const step = TOUR_STEPS[tourStep];
     if (step?.expandGroup) {
-      const t = setTimeout(() => setTourRenderTick(n => n + 1), 100);
-      return () => clearTimeout(t);
+      // Double rAF ensures DOM has painted before we re-read getBoundingClientRect
+      let raf1 = requestAnimationFrame(() => {
+        let raf2 = requestAnimationFrame(() => {
+          setTourRenderTick(n => n + 1);
+        });
+        return () => cancelAnimationFrame(raf2);
+      });
+      return () => cancelAnimationFrame(raf1);
     }
   }, [tourStep, tourActive]);
 
@@ -754,13 +760,15 @@ export default function App() {
                 const justAdded = recentlyAdded === defaultSnippet?.id;
                 return (
                   <div key={name}
-                    ref={name === "CBC" ? el => tourRefs.current.cbcSection = el : null}
+                    ref={el => {
+                      if (name === "CBC") tourRefs.current.cbcSection = el;
+                      if (name === "Fe/TIBC/Ferr") tourRefs.current.dragHandle = el;
+                    }}
                     draggable
                     onDragStart={e => handleDragStart(e, name)}
                     onDragOver={e => handleDragOver(e, name)}
                     onDragLeave={() => setDragOverGroup(null)}
                     onDrop={e => handleDrop(e, name)}
-                    ref={name === "Fe/TIBC/Ferr" ? el => tourRefs.current.dragHandle = el : null}
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div style={{ display:"flex", alignItems:"center" }}>
                       {/* Six-dot grip handle */}
@@ -1254,16 +1262,11 @@ export default function App() {
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
         const pad = step.inHeader ? 6 : 8;
 
-        // For cbcSection (step 4): extend spotlight to left edge of viewport so full row is included
+        // For cbcSection: use normal rect (expansion tick will update it)
+        // For dragHandle: normal spotlight around the row only
         let hl = null;
         if (rect) {
-          if (step.ref === "cbcSection") {
-            hl = { left: 0, top: rect.top - pad, width: rect.right + pad, height: rect.height + pad*2 };
-          } else if (step.ref === "dragHandle") {
-            hl = { left: 0, top: rect.top - pad, width: rect.right + pad, height: rect.height + pad*2 };
-          } else {
-            hl = { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 };
-          }
+          hl = { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 };
         }
         const ww = window.innerWidth; const wh = window.innerHeight;
 
