@@ -28,6 +28,12 @@ const GROUP_DEFAULT_ID = {
 };
 
 // Display abbreviations for left column labels
+// Full display names for groups whose internal key differs from display preference
+const GROUP_DISPLAY = {
+  "Fe/TIBC/Ferr": "Iron studies",
+};
+
+// Abbreviations used only when column is narrow
 const GROUP_ABBREV = {
   "Microalbumin":   "Microalb",
   "Lipoprotein(a)": "Lp(a)",
@@ -36,7 +42,7 @@ const GROUP_ABBREV = {
   "Urinalysis":     "UA",
   "Vitamin B12":    "Vit B12",
   "Vitamin D":      "Vit D",
-  "Fe/TIBC/Ferr":   "Fe/TIBC/Ferr",
+  "Fe/TIBC/Ferr":   "Fe/TIBC",
 };
 
 const DEFAULT_SNIPPETS = [
@@ -261,7 +267,7 @@ const TOUR_STEPS = [
     requireCompose:true, expandGroup:"Microalbumin" },
   { ref:"dragHandle",    inHeader:false, title:"Reorder labs",
     body:"Grip the ⋮⋮ handle on the left of any lab row to rearrange the column. Your preferred order is saved automatically.",
-    requireCompose:true, showHandleArrow:true },
+    requireCompose:true, showHandleArrow:true, tooltipRight:true },
   { ref:"clinicianTodo", inHeader:false, title:"Clinician to do",
     body:"When your comments include prescriptions, new diagnoses, or follow-up lab orders, they queue up here as reminders so you don't miss them.",
     requireCompose:true },
@@ -295,6 +301,7 @@ export default function App() {
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [tourRenderTick, setTourRenderTick] = useState(0); // increments after expansion to force re-render
   const [tourTriggered, setTourTriggered] = useState([]); // snippets added during tour
   const [tourExpandedGroup, setTourExpandedGroup] = useState(null);
   const [showTourPrompt, setShowTourPrompt] = useState(() => {
@@ -344,6 +351,17 @@ export default function App() {
   }, [activeTab]);
 
   const useAbbrev = leftColWidth < 150;
+
+  // Force overlay re-render after expansion DOM settles (steps 4 & 5)
+  useEffect(() => {
+    if (!tourActive) return;
+    const step = TOUR_STEPS[tourStep];
+    if (step?.expandGroup) {
+      const t = setTimeout(() => setTourRenderTick(n => n + 1), 100);
+      return () => clearTimeout(t);
+    }
+  }, [tourStep, tourActive]);
+
   useEffect(() => {
     fetch("/api/stats?action=visit")
       .then(r => r.json())
@@ -762,10 +780,12 @@ export default function App() {
                           style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color: justAdded ? "#16a34a" : "#1e3a8a", display:"flex", alignItems:"center", gap:5, transition:"color 0.2s", whiteSpace:"nowrap", overflow:"hidden", minWidth:0 }}
                           onMouseEnter={e=>{ if(!justAdded) e.currentTarget.style.color="#2563eb"; }} onMouseLeave={e=>{ if(!justAdded) e.currentTarget.style.color="#1e3a8a"; }}>
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block" }}>
-                          {justAdded
-                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{useAbbrev ? (GROUP_ABBREV[name] || name) : name}</>
-                            : <>+ {useAbbrev ? (GROUP_ABBREV[name] || name) : name}</>
-                          }
+                          {(() => {
+                            const label = useAbbrev ? (GROUP_ABBREV[name] || GROUP_DISPLAY[name] || name) : (GROUP_DISPLAY[name] || name);
+                            return justAdded
+                              ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{label}</>
+                              : <>+ {label}</>;
+                          })()}
                           </span>
                         </button>
                         {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
@@ -1228,6 +1248,7 @@ export default function App() {
 
       {/* ── TOUR OVERLAY ── */}
       {tourActive && (() => {
+        void tourRenderTick; // consume to trigger re-render after expansion
         const step = TOUR_STEPS[tourStep];
         const targetEl = tourRefs.current[step.ref];
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
@@ -1284,10 +1305,15 @@ export default function App() {
                   ? "0 0 0 3px rgba(255,255,255,0.9), 0 0 0 5px rgba(255,255,255,0.3)"
                   : "0 0 0 3px #60a5fa, 0 0 0 5px rgba(96,165,250,0.4)",
                 zIndex:400, pointerEvents:"none" }}/>
-              {/* Handle arrow indicator for reorder step */}
-              {step.showHandleArrow && (
-                <div style={{ position:"fixed", left: 4, top: hl.top + hl.height/2 - 14,
-                  zIndex:401, pointerEvents:"none", display:"flex", alignItems:"center", gap:4 }}>
+              {/* Handle arrow indicator for reorder step — sits just left of the handle dots */}
+              {step.showHandleArrow && rect && (
+                <div style={{
+                  position:"fixed",
+                  left: Math.max(4, rect.left - 72),
+                  top: rect.top + rect.height/2 - 11,
+                  zIndex:401, pointerEvents:"none",
+                  display:"flex", alignItems:"center", gap:4
+                }}>
                   <div style={{ background:"#2563eb", color:"white", fontSize:10, fontWeight:700,
                     padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>grip here →</div>
                 </div>
