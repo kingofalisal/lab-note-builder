@@ -4,6 +4,29 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const DEFAULT_HEADER = "Thank you for getting your lab tests done. Here is my interpretation of your results.";
 const DEFAULT_FOOTER = "Other lab abnormalities not mentioned are not of any importance to your health. If you have further questions about your results, please send me a MyHealth message or schedule a video visit so we can discuss in more detail.";
 
+// Per-group: which trigger id is the "header default" (shown without expanding)
+const GROUP_DEFAULT_ID = {
+  "TSH":            "tsh_normal_not_on_meds",
+  "CBC":            "cbc_normal",
+  "BMP":            "bmp_normal",
+  "LFTs":           "lfts_normal",
+  "A1c":            "a1c_normal",
+  "Microalbumin":   "microalbumin_normal",
+  "Vitamin D":      "vitd_normal",
+  "Lipids":         "lipids_normal",
+  "Lipoprotein(a)": "lpa_normal",
+  "STI":            "sti_negative",
+  "HCV":            "hcv_negative",
+  "HBV":            "hbv_immune",
+  "Vitamin B12":    "b12_normal",
+  "PSA":            "psa_normal_screening",
+  "Iron studies":   "iron_normal",
+  "Testosterone":   "testosterone_normal",
+  "Uric acid":      "uric_acid_normal",
+  "Urinalysis":     "ua_normal",
+  "Urine Culture":  "ucx_negative",
+};
+
 const DEFAULT_SNIPPETS = [
   { id:"tsh_low_on_meds", group:"TSH", trigger:"TSH low on meds", text:"Your TSH is low, which suggests your thyroid dose is too high. I'll send a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
   { id:"tsh_low_not_on_meds", group:"TSH", trigger:"TSH low (not on meds)", text:"Your TSH (thyroid) is low, which suggests you may have an overactive thyroid gland. This can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
@@ -12,19 +35,19 @@ const DEFAULT_SNIPPETS = [
   { id:"tsh_high_on_meds", group:"TSH", trigger:"TSH high on meds", text:"Your TSH is higher than it should be, which suggests you may need a higher dose of your thyroid medication if you've been taking it as prescribed. I'll send a prescription to your pharmacy with a slightly higher dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send higher-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
   { id:"tsh_high_not_on_meds", group:"TSH", trigger:"TSH high (not on meds)", text:"Your TSH is high, which indicates your thyroid level is lower than normal. This can sometimes cause symptoms like fatigue, feeling cold, or weight gain. If you are feeling fine, we can just recheck in a year. If you are troubled by any of those symptoms, let me know and we can start a low dose of thyroid medication to see if it helps.", clinicianActions:[], staffActions:[] },
   { id:"cbc_normal", group:"CBC", trigger:"CBC normal", text:"Your blood counts (CBC) are normal. This includes red blood cells (anemia), white blood cells (infection), and platelets (blood clotting).", clinicianActions:[], staffActions:[] },
-  { id:"mild_anemia", group:"CBC", trigger:"Mild anemia needs labs", text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2–3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", clinicianActions:["Order anemia workup labs"], staffActions:["Schedule follow-up visit with Dr. [name] within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"mild_anemia", group:"CBC", trigger:"Mild anemia needs labs", text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2–3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", clinicianActions:["Order anemia workup labs"], staffActions:["Schedule follow-up visit with me within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
   { id:"bmp_normal", group:"BMP", trigger:"BMP normal", text:"Your electrolytes and kidney function are normal.", clinicianActions:[], staffActions:[] },
   { id:"lfts_normal", group:"LFTs", trigger:"LFTs normal", text:"Your liver tests are normal.", clinicianActions:[], staffActions:[] },
-  { id:"transaminitis_new", group:"LFTs", trigger:"Transaminitis new", text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause. Possible causes include alcohol use, herbal medications or supplements, or fat accumulation in the liver. I've ordered repeat blood tests that I'd like you to complete in about a month.", clinicianActions:["Order repeat LFTs + liver workup in ~1 month"], staffActions:[] },
+  { id:"transaminitis_new", group:"LFTs", trigger:"Transaminitis new", text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause. Possible causes include alcohol use, herbal medications or supplements, or fat accumulation in the liver. I've ordered repeat blood tests that I'd like you to complete in about a month.", clinicianActions:["Order repeat LFTs + liver workup in ~1 month","Add transaminitis (elevated liver enzymes) to problem list"], staffActions:[] },
   { id:"transaminitis_still", group:"LFTs", trigger:"Transaminitis still", text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). You can help treat this by avoiding alcohol and herbal supplements, which can further irritate the liver, and by working toward weight loss. We should recheck blood tests every 6 months to monitor this condition.", clinicianActions:["Order repeat LFTs in 6 months"], staffActions:[] },
   { id:"a1c_normal", group:"A1c", trigger:"A1c normal (no prior diagnosis of DM or preDM)", text:"Your A1c is in the normal range, which means your average blood sugar over the past 3 months has been healthy. Keep up the good work with your diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
   { id:"a1c_normal_prediabetes", group:"A1c", trigger:"A1c normal in prediabetes", text:"Your A1c is now in the normal range, which means your prediabetes is well controlled. Continue to avoid excess sweets and simple carbohydrates (bread, rice, pasta, potatoes). We should recheck your A1c in one year.", clinicianActions:[], staffActions:[] },
   { id:"still_prediabetes", group:"A1c", trigger:"Still prediabetes", text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:[], staffActions:[] },
-  { id:"new_prediabetes", group:"A1c", trigger:"New prediabetes", text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet, lifestyle changes, and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:[], staffActions:[] },
+  { id:"new_prediabetes", group:"A1c", trigger:"New prediabetes", text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet, lifestyle changes, and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:["Add prediabetes to problem list"], staffActions:[] },
   { id:"diabetes_controlled_6mo", group:"A1c", trigger:"Diabetes controlled – 6 mo recheck", text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 6 months.", clinicianActions:["Order A1c in 6 months"], staffActions:[] },
   { id:"diabetes_controlled_3mo", group:"A1c", trigger:"Diabetes controlled – 3 mo recheck", text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 3 months.", clinicianActions:["Order A1c in 3 months"], staffActions:[] },
-  { id:"diabetes_not_controlled", group:"A1c", trigger:"Diabetes not controlled", text:"Your A1c (diabetes) is higher than we would like, which tells us your blood sugar has been running too high over the past 3 months. We need to work together to improve this and lower your risk of diabetes complications. Please schedule a visit with me in the coming weeks so we can review and adjust your treatment plan.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] in the next few weeks (video or in-office)."] },
-  { id:"new_diabetes", group:"A1c", trigger:"New diagnosis of diabetes", text:"Your A1c result shows that your blood sugar is now in the diabetes range. We can work together to get your blood sugar back to normal and prevent complications through a combination of diet changes, exercise, and medication. Please schedule a visit with me in the coming weeks (video or in-office) so we can talk through this diagnosis and come up with a plan that works for you.", clinicianActions:[], staffActions:["Schedule new diabetes visit with Dr. [name] in the next few weeks (video or in-office)."] },
+  { id:"diabetes_not_controlled", group:"A1c", trigger:"Diabetes not controlled", text:"Your A1c (diabetes) is higher than we would like, which tells us your blood sugar has been running too high over the past 3 months. We need to work together to improve this and lower your risk of diabetes complications. Please schedule a visit with me in the coming weeks so we can review and adjust your treatment plan.", clinicianActions:[], staffActions:["Schedule visit with me in the next few weeks (video or in-office)."] },
+  { id:"new_diabetes", group:"A1c", trigger:"New diagnosis of diabetes", text:"Your A1c result shows that your blood sugar is now in the diabetes range. We can work together to get your blood sugar back to normal and prevent complications through a combination of diet changes, exercise, and medication. Please schedule a visit with me in the coming weeks (video or in-office) so we can talk through this diagnosis and come up with a plan that works for you.", clinicianActions:["Add type 2 diabetes to problem list"], staffActions:["Schedule new diabetes visit with me in the next few weeks (video or in-office)."] },
   { id:"microalbumin_normal", group:"Microalbumin", trigger:"Microalbumin normal", text:"Your urine test for protein (microalbumin/creatinine ratio) is normal, which tells us your kidneys are not leaking protein.", clinicianActions:[], staffActions:[] },
   { id:"microalbumin_elevated_new", group:"Microalbumin", trigger:"Microalbumin elevated new", text:"Your urine test (microalbumin/creatinine ratio) shows some protein leaking from your kidneys, which can be an early warning sign that the kidneys are under stress. This can be caused by high blood pressure, diabetes, or other conditions. I've ordered a repeat test to confirm this finding, which I'd like you to complete at your lab in about 1 month.", clinicianActions:["Order repeat microalbumin/creatinine ratio in 1 month"], staffActions:[] },
   { id:"microalbumin_elevated_still", group:"Microalbumin", trigger:"Microalbumin elevated still", text:"Your urine test (microalbumin/creatinine ratio) continues to show some protein in your urine. We will continue to monitor this closely and focus on controlling blood pressure and blood sugar to protect your kidney health. We will recheck in 6 months.", clinicianActions:["Order microalbumin/creatinine ratio in 6 months"], staffActions:[] },
@@ -35,7 +58,7 @@ const DEFAULT_SNIPPETS = [
   { id:"lipids_normal", group:"Lipids", trigger:"Lipids normal", text:"Your cholesterol and lipid levels all look healthy. Continue your current diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
   { id:"ldl_at_goal_on_statin", group:"Lipids", trigger:"LDL at goal on statin", text:"Your LDL cholesterol is at goal on your statin medication — great news! Keep taking your medication as prescribed. We will recheck your lipid panel in one year.", clinicianActions:["Order lipid panel in 1 year"], staffActions:[] },
   { id:"ldl_elevated_no_meds", group:"Lipids", trigger:"LDL elevated no meds needed", text:"Your LDL (bad cholesterol) is higher than recommended. For most people, the best first step is to reduce saturated fat in your diet, increase fiber, and get regular aerobic exercise. Depending on your overall heart risk, medication may also be appropriate. Let's discuss this at your next visit. If you'd like to discuss sooner, please schedule a visit.", clinicianActions:[], staffActions:[] },
-  { id:"ldl_high_despite_statin", group:"Lipids", trigger:"LDL too high despite statin", text:"Your LDL cholesterol is still above our target despite your statin medication. This may mean the dose needs to be adjusted or that we consider adding another medication. I'd like to discuss your options — please schedule a visit or send me a message.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 1–2 months (video OK)."] },
+  { id:"ldl_high_despite_statin", group:"Lipids", trigger:"LDL too high despite statin", text:"Your LDL cholesterol is still above our target despite your statin medication. This may mean the dose needs to be adjusted or that we consider adding another medication. I'd like to discuss your options — please schedule a visit or send me a message.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video OK)."] },
   { id:"ldl_high_needs_statin", group:"Lipids", trigger:"LDL too high – needs statin", text:"Your LDL (bad cholesterol) is too high, and given your overall cardiovascular risk, I recommend starting a statin medication once daily. I've sent this to your pharmacy. Please take it daily as prescribed. If you'd like to discuss further before starting, please schedule an in-office or video visit in the next 1–2 months. Once you start the medication, let's repeat your lipid panel at least 2 months later to see how it's working.", clinicianActions:["Prescribe statin","Order lipid panel in 2+ months after starting statin"], staffActions:[] },
   { id:"triglycerides_high", group:"Lipids", trigger:"Triglycerides too high", text:"Your triglycerides (blood fats) are higher than normal. This is common with non-fasting blood tests and in that case can be disregarded. If you did this test fasting, you can lower your triglycerides by reducing alcohol intake, cutting back on sugar and refined carbohydrates, and getting regular exercise. Weight loss also helps significantly. We will recheck this at your next lab visit.", clinicianActions:[], staffActions:[] },
   { id:"hdl_too_low", group:"Lipids", trigger:"HDL too low", text:"Your HDL (good cholesterol) is lower than normal. Higher HDL levels are associated with a lower risk of heart attack. Some ways to raise your HDL include: regular aerobic exercise, replacing trans fats with unsaturated fats, quitting smoking if you smoke, and losing excess weight. We should recheck this in 1 year, or sooner if you make changes and want to see the effect on your HDL.", clinicianActions:[], staffActions:[] },
@@ -56,58 +79,63 @@ const DEFAULT_SNIPPETS = [
   { id:"iron_normal", group:"Iron studies", trigger:"Iron studies normal", text:"Your iron tests (iron, total iron binding capacity, and ferritin) are all within the normal range.", clinicianActions:[], staffActions:[] },
   { id:"iron_deficiency_no_anemia_women", group:"Iron studies", trigger:"Iron deficiency – no anemia, menstruating women", text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in 6 months. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Order CBC and iron studies in 6 months"], staffActions:[] },
   { id:"iron_deficiency_anemia_women", group:"Iron studies", trigger:"Iron deficiency anemia – menstruating women", text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in 6 months. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Order CBC and iron studies in 6 months"], staffActions:[] },
-  { id:"iron_deficiency_anemia_men", group:"Iron studies", trigger:"Iron deficiency anemia – men", text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 4 weeks (video or in-office)."] },
-  { id:"iron_deficiency_no_anemia_men", group:"Iron studies", trigger:"Iron deficiency without anemia – men", text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 4 weeks (video or in-office)."] },
+  { id:"iron_deficiency_anemia_men", group:"Iron studies", trigger:"Iron deficiency anemia – men", text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:[], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"iron_deficiency_no_anemia_men", group:"Iron studies", trigger:"Iron deficiency without anemia – men", text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:[], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
   { id:"ferritin_elevated", group:"Iron studies", trigger:"Ferritin elevated", text:"Your ferritin level is higher than normal. Ferritin is a protein that stores iron, but it is also an inflammatory marker — it can be elevated with infection, inflammation, liver disease, or excess iron. At this level, no treatment is required. We can repeat this test with your next regularly planned blood tests.", clinicianActions:[], staffActions:[] },
   { id:"testosterone_normal", group:"Testosterone", trigger:"Testosterone normal", text:"Your testosterone level is within the normal range.", clinicianActions:[], staffActions:[] },
   { id:"testosterone_low_first", group:"Testosterone", trigger:"Testosterone low (1st time)", text:"Your testosterone level is lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. We need to repeat this test at least once, at least 1 month after the last test. I've sent the order to your preferred lab. Testing before 10 AM gives the most reliable results. If the level is low a second time, we'll discuss treatment options.", clinicianActions:["Order repeat testosterone level (morning). Consider adding FSH, LH if not already done."], staffActions:[] },
-  { id:"testosterone_low_confirmed", group:"Testosterone", trigger:"Testosterone low (at least twice)", text:"Your testosterone level has again come back lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss the findings and consider treatment options.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 1–2 months (video or in-office)."] },
+  { id:"testosterone_low_confirmed", group:"Testosterone", trigger:"Testosterone low (at least twice)", text:"Your testosterone level has again come back lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss the findings and consider treatment options.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
   { id:"uric_acid_normal", group:"Uric acid", trigger:"Uric acid normal – not on meds for gout", text:"Your uric acid level is normal.", clinicianActions:[], staffActions:[] },
   { id:"uric_acid_elevated_no_sx", group:"Uric acid", trigger:"Uric acid elevated – no symptoms", text:"Your uric acid level is higher than normal. Elevated uric acid does not always cause symptoms, but over time it can lead to gout (painful joint flares) or kidney stones. Reducing foods high in purines — such as red meat, organ meats, shellfish, and beer in particular — can help lower your level.", clinicianActions:[], staffActions:[] },
-  { id:"uric_acid_high_recurrent_gout", group:"Uric acid", trigger:"Uric acid > 6 with recurrent gout – not yet on ppx", text:"Your uric acid level is too high and is likely contributing to your recurrent gout attacks. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss starting medication to lower your uric acid and reduce your gout attacks.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 1–2 months (video or in-office)."] },
-  { id:"uric_acid_high_on_meds", group:"Uric acid", trigger:"Uric acid > 6 despite allopurinol or febuxostat", text:"Your uric acid level is not in our target range despite your current medication. We need to adjust your treatment to get it lower. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss further.", clinicianActions:[], staffActions:["Schedule visit with Dr. [name] within 1–2 months (video or in-office)."] },
+  { id:"uric_acid_high_recurrent_gout", group:"Uric acid", trigger:"Uric acid > 6 with recurrent gout – not yet on ppx", text:"Your uric acid level is too high and is likely contributing to your recurrent gout attacks. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss starting medication to lower your uric acid and reduce your gout attacks.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
+  { id:"uric_acid_high_on_meds", group:"Uric acid", trigger:"Uric acid > 6 despite allopurinol or febuxostat", text:"Your uric acid level is not in our target range despite your current medication. We need to adjust your treatment to get it lower. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss further.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
   { id:"ua_normal", group:"Urinalysis", trigger:"Urinalysis normal", text:"Your urine test is normal.", clinicianActions:[], staffActions:[] },
-  { id:"ua_blood_new", group:"Urinalysis", trigger:"Blood in urine new", text:"Your urine test shows blood, which needs further evaluation. Blood in the urine can have many causes, most of which are not serious, but it is important to investigate. I've ordered some repeat lab tests for you to complete prior to a follow-up visit. I've asked my staff to schedule a visit with me in the next few weeks to discuss further.", clinicianActions:["Order repeat UA and additional hematuria workup labs"], staffActions:["Schedule visit with Dr. [name] within 4 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
-  { id:"ua_protein", group:"Urinalysis", trigger:"Protein in urine", text:"Your urine test shows protein, which can be an early sign of kidney stress. I've ordered some repeat lab tests for you to complete in about 4 weeks. I've asked my staff to schedule a visit with me to review results and discuss further.", clinicianActions:["Order repeat UA and microalbumin/creatinine ratio in ~4 weeks"], staffActions:["Schedule visit with Dr. [name] within 4–6 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"ua_blood_new", group:"Urinalysis", trigger:"Blood in urine new", text:"Your urine test shows blood, which needs further evaluation. Blood in the urine can have many causes, most of which are not serious, but it is important to investigate. I've ordered some repeat lab tests for you to complete prior to a follow-up visit. I've asked my staff to schedule a visit with me in the next few weeks to discuss further.", clinicianActions:["Order repeat UA and additional hematuria workup labs"], staffActions:["Schedule visit with me within 4 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"ua_protein", group:"Urinalysis", trigger:"Protein in urine", text:"Your urine test shows protein, which can be an early sign of kidney stress. I've ordered some repeat lab tests for you to complete in about 4 weeks. I've asked my staff to schedule a visit with me to review results and discuss further.", clinicianActions:["Order repeat UA and microalbumin/creatinine ratio in ~4 weeks"], staffActions:["Schedule visit with me within 4–6 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
   { id:"ucx_negative", group:"Urine Culture", trigger:"Urine culture negative", text:"Your urine culture is negative, meaning no bacteria were found. If you have any ongoing urinary symptoms, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
   { id:"ucx_positive_correct_abx", group:"Urine Culture", trigger:"Urine culture positive – on correct antibiotic", text:"Your urine culture shows an infection that should be well treated by the antibiotic you were given. Your symptoms should improve within the next 2–3 days. If your symptoms are not improving or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
-  { id:"ucx_positive_new_abx", group:"Urine Culture", trigger:"Urine culture positive – needs new antibiotic", text:"Your urine culture shows an infection. I am sending in an antibiotic that should treat this infection well. Please start taking it as soon as possible and complete the full course as directed. Your symptoms should improve within 2–3 days of starting. If they do not improve or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:["Prescribe targeted antibiotic per culture sensitivities"], staffActions:[] }
+  { id:"ucx_positive_new_abx", group:"Urine Culture", trigger:"Urine culture positive – needs new antibiotic", text:"Your urine culture shows an infection. I am sending in an antibiotic that should treat this infection well. Please start taking it as soon as possible and complete the full course as directed. Your symptoms should improve within 2–3 days of starting. If they do not improve or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:["Prescribe targeted antibiotic per culture sensitivities"], staffActions:[] },
 ];
 
-// ── Storage helpers ──────────────────────────────────────────────────────────
-function loadSnippets() {
+// ── Storage helpers ───────────────────────────────────────────────────────────
+function loadDeletedIds() {
+  try { const s=localStorage.getItem("lab_deleted_ids"); return s ? JSON.parse(s) : []; } catch { return []; }
+}
+function saveDeletedIds(ids) { localStorage.setItem("lab_deleted_ids", JSON.stringify(ids)); }
+
+function loadGroupOrder() {
+  try {
+    const s = localStorage.getItem("lab_group_order");
+    if (!s) return null;
+    return JSON.parse(s);
+  } catch { return null; }
+}
+function saveGroupOrder(order) { localStorage.setItem("lab_group_order", JSON.stringify(order)); }
+
+function loadSnippets(deletedIds) {
   try {
     const saved = localStorage.getItem("lab_snippets_v2");
-    if (!saved) return DEFAULT_SNIPPETS;
+    const deleted = deletedIds || loadDeletedIds();
+    if (!saved) return DEFAULT_SNIPPETS.filter(s => !deleted.includes(s.id));
     const parsed = JSON.parse(saved);
-    const merged = DEFAULT_SNIPPETS.map(def => {
-      const ov = parsed.find(s => s.id === def.id);
-      if (!ov) return def;
-      // support old single 'actions' field for backward compat
-      return {
-        ...def,
-        text: ov.text,
-        clinicianActions: ov.clinicianActions ?? (ov.actions ?? def.clinicianActions),
-        staffActions: ov.staffActions ?? def.staffActions,
-      };
-    });
+    const merged = DEFAULT_SNIPPETS
+      .filter(def => !deleted.includes(def.id))
+      .map(def => {
+        const ov = parsed.find(s => s.id === def.id);
+        if (!ov) return def;
+        return { ...def, text: ov.text,
+          clinicianActions: ov.clinicianActions ?? (ov.actions ?? def.clinicianActions),
+          staffActions: ov.staffActions ?? def.staffActions };
+      });
     const custom = parsed.filter(s => s.custom);
     return [...merged, ...custom];
   } catch { return DEFAULT_SNIPPETS; }
 }
-function saveSnippets(snippets) {
-  localStorage.setItem("lab_snippets_v2", JSON.stringify(snippets));
-}
+function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v2", JSON.stringify(snippets)); }
 function loadHeaderFooter() {
-  try {
-    const s = localStorage.getItem("lab_headerfooter");
-    if (!s) return { header: DEFAULT_HEADER, footer: DEFAULT_FOOTER };
-    return JSON.parse(s);
-  } catch { return { header: DEFAULT_HEADER, footer: DEFAULT_FOOTER }; }
+  try { const s=localStorage.getItem("lab_headerfooter"); if (!s) return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; return JSON.parse(s); } catch { return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; }
 }
-function saveHeaderFooter(hf) {
-  localStorage.setItem("lab_headerfooter", JSON.stringify(hf));
-}
+function saveHeaderFooter(hf) { localStorage.setItem("lab_headerfooter", JSON.stringify(hf)); }
 
 function isCustomized(snippet) {
   if (snippet.custom) return true;
@@ -118,21 +146,30 @@ function isCustomized(snippet) {
     JSON.stringify(def.staffActions) !== JSON.stringify(snippet.staffActions);
 }
 
-// ── Group helpers ────────────────────────────────────────────────────────────
-function getGroups(snippets) {
+// ── Group helpers ─────────────────────────────────────────────────────────────
+function getGroupsOrdered(snippets, groupOrder) {
   const groups = {};
   snippets.forEach(s => {
     const g = s.group || "Other";
     if (!groups[g]) groups[g] = [];
     groups[g].push(s);
   });
-  // Other always last
-  const sorted = Object.keys(groups).filter(g => g !== "Other").sort();
-  if (groups["Other"]) sorted.push("Other");
-  return sorted.map(g => ({ name: g, snippets: groups[g] }));
+  const allGroupNames = Object.keys(groups);
+  let sorted;
+  if (groupOrder && groupOrder.length > 0) {
+    // Use saved order, append any new groups alphabetically, Other always last
+    const ordered = groupOrder.filter(g => allGroupNames.includes(g));
+    const newGroups = allGroupNames.filter(g => !ordered.includes(g) && g !== "Other").sort();
+    sorted = [...ordered, ...newGroups];
+    if (groups["Other"]) sorted.push("Other");
+  } else {
+    sorted = allGroupNames.filter(g => g !== "Other").sort();
+    if (groups["Other"]) sorted.push("Other");
+  }
+  return sorted.filter(g => groups[g]).map(g => ({ name: g, snippets: groups[g] }));
 }
 
-// ── Conflict detection ───────────────────────────────────────────────────────
+// ── Conflict detection ────────────────────────────────────────────────────────
 function getConflicts(triggeredIds, snippets) {
   const conflicts = new Set();
   const groupCounts = {};
@@ -143,37 +180,29 @@ function getConflicts(triggeredIds, snippets) {
     if (!groupCounts[g]) groupCounts[g] = [];
     groupCounts[g].push(id);
   });
-  Object.values(groupCounts).forEach(ids => {
-    if (ids.length > 1) ids.forEach(id => conflicts.add(id));
-  });
+  Object.values(groupCounts).forEach(ids => { if (ids.length > 1) ids.forEach(id => conflicts.add(id)); });
   return conflicts;
 }
 
-
-
-// ── Main Component ───────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function App() {
-  const [snippets, setSnippets] = useState(loadSnippets);
+  const [deletedIds, setDeletedIds] = useState(loadDeletedIds);
+  const [snippets, setSnippets] = useState(() => loadSnippets(loadDeletedIds()));
   const [hf, setHf] = useState(loadHeaderFooter);
+  const [groupOrder, setGroupOrder] = useState(() => loadGroupOrder());
   const [activeTab, setActiveTab] = useState("compose");
   const [triggered, setTriggered] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [matchStatus, setMatchStatus] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [staffCopied, setStaffCopied] = useState(false);
   const [showNewNoteWarning, setShowNewNoteWarning] = useState(false);
   const [skipNewNoteWarning, setSkipNewNoteWarning] = useState(() => {
     try { return localStorage.getItem("lab_skip_new_note_warning") === "true"; } catch { return false; }
   });
   const [dontShowAgainChecked, setDontShowAgainChecked] = useState(false);
-
-  const groups = getGroups(snippets);
-
-  // Left accordion: all groups open by default
-  const [leftOpen, setLeftOpen] = useState(() => {
-    const initial = {};
-    getGroups(loadSnippets()).forEach(g => { initial[g.name] = true; });
-    return initial;
-  });
+  const [checkedActions, setCheckedActions] = useState({});
+  const [leftExpanded, setLeftExpanded] = useState({});
   const [manageOpen, setManageOpen] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
@@ -186,12 +215,24 @@ export default function App() {
   const [exportEmail, setExportEmail] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [importDrag, setImportDrag] = useState(false);
+  const [dragOverGroup, setDragOverGroup] = useState(null);
+  const [draggingGroup, setDraggingGroup] = useState(null);
+  const [stats, setStats] = useState({ visitors: "…", notes: "…" });
   const recognitionRef = useRef(null);
   const matchTimerRef = useRef(null);
   const continuousRef = useRef(false);
 
-  const conflicts = getConflicts(triggered, snippets);
+  const groups = getGroupsOrdered(snippets, groupOrder);
 
+  // ── Fetch stats on mount ──────────────────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/stats?action=visit")
+      .then(r => r.json())
+      .then(d => setStats(d))
+      .catch(() => {});
+  }, []);
+
+  // ── Actions ───────────────────────────────────────────────────────────────
   const allClinicianActions = [];
   const allStaffActions = [];
   triggered.forEach(id => {
@@ -201,10 +242,8 @@ export default function App() {
       (s.staffActions || []).forEach(a => { if (!allStaffActions.includes(a)) allStaffActions.push(a); });
     }
   });
-  const [checkedActions, setCheckedActions] = useState({});
-  const [staffCopied, setStaffCopied] = useState(false);
 
-  // Build ordered note lines: for each group, non-wildcards first, wildcards last
+  // ── Note lines ────────────────────────────────────────────────────────────
   const noteLines = (() => {
     const byGroup = {};
     triggered.forEach(id => {
@@ -216,7 +255,6 @@ export default function App() {
       else byGroup[g].normal.push(s);
     });
     const lines = [];
-    // preserve group order as triggered
     const seenGroups = [];
     triggered.forEach(id => {
       const s = snippets.find(sn => sn.id === id);
@@ -237,16 +275,12 @@ export default function App() {
     ? `${hf.header}\n\n${noteLines.map(l => `• ${l.text}`).join("\n\n")}\n\n${hf.footer}`
     : "";
 
-  // ── Speech recognition ─────────────────────────────────────────────────────
+  // ── Speech ────────────────────────────────────────────────────────────────
   const doClassify = useCallback(async (text) => {
     setMatchStatus({ text: `Heard: "${text}" — matching…`, type:"classifying" });
     try {
       const triggerList = snippets.map(s => s.trigger).join("\n");
-      const res = await fetch("/api/classify", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ transcript: text, triggers: triggerList })
-      });
+      const res = await fetch("/api/classify", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ transcript: text, triggers: triggerList }) });
       const data = await res.json();
       if (data.match && data.match !== "none") {
         const matched = snippets.find(s => s.trigger.toLowerCase() === data.match.toLowerCase());
@@ -254,119 +288,76 @@ export default function App() {
           setTriggered(prev => [...prev, matched.id]);
           setMatchStatus({ text: `Matched: ${matched.trigger}`, type:"matched" });
           if (matchTimerRef.current) clearTimeout(matchTimerRef.current);
-          matchTimerRef.current = setTimeout(() => {
-            if (continuousRef.current) setMatchStatus(null);
-          }, 1000);
+          matchTimerRef.current = setTimeout(() => { if (continuousRef.current) setMatchStatus(null); }, 1000);
           return;
         }
       }
       setMatchStatus({ text: `No match for "${text}"`, type:"nomatch" });
-    } catch {
-      setMatchStatus({ text:"Classification error — check connection", type:"error" });
-    }
+    } catch { setMatchStatus({ text:"Classification error — check connection", type:"error" }); }
   }, [snippets]);
 
   const startListening = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { setMatchStatus({ text:"Speech recognition requires Chrome or Edge", type:"error" }); return; }
-
     continuousRef.current = true;
     const recognition = new SR();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.lang = "en-US"; recognition.continuous = false; recognition.interimResults = false;
     recognitionRef.current = recognition;
-
     recognition.onstart = () => setIsListening(true);
     recognition.onresult = async (e) => {
       const text = e.results[0][0].transcript;
       await doClassify(text);
-      // restart if still in continuous mode
-      if (continuousRef.current) {
-        try { recognition.start(); } catch {}
-      }
+      if (continuousRef.current) { try { recognition.start(); } catch {} }
     };
     recognition.onerror = (e) => {
-      if (e.error === "no-speech" && continuousRef.current) {
-        try { recognition.start(); } catch {}
-        return;
-      }
-      if (e.error === "not-allowed") {
-        setMatchStatus({ text:"Microphone access denied — check browser permissions", type:"error" });
-        setIsListening(false);
-        continuousRef.current = false;
-      }
+      if (e.error === "no-speech" && continuousRef.current) { try { recognition.start(); } catch {} return; }
+      if (e.error === "not-allowed") { setMatchStatus({ text:"Microphone access denied — check browser permissions", type:"error" }); setIsListening(false); continuousRef.current = false; }
     };
-    recognition.onend = () => {
-      if (!continuousRef.current) setIsListening(false);
-    };
+    recognition.onend = () => { if (!continuousRef.current) setIsListening(false); };
     recognition.start();
   }, [doClassify]);
 
   const stopListening = useCallback(() => {
-    continuousRef.current = false;
-    recognitionRef.current?.stop();
-    setIsListening(false);
-    setMatchStatus(null);
+    continuousRef.current = false; recognitionRef.current?.stop(); setIsListening(false); setMatchStatus(null);
   }, []);
 
-  // ── Add trigger (from left menu or voice) ─────────────────────────────────
+  // ── Trigger actions ───────────────────────────────────────────────────────
   const addTrigger = (id) => setTriggered(prev => [...prev, id]);
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
-    const wc = { id: wcId, group, trigger:`${group} wildcard`, text:`${group}: ***`, actions:[], isWildcard:true, ephemeral:true };
+    const wc = { id: wcId, group, trigger:`${group} wildcard`, text:`${group}: ***`, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
     setSnippets(prev => [...prev, wc]);
     setTriggered(prev => [...prev, wcId]);
   };
 
   const removeTriggered = (idx) => setTriggered(prev => prev.filter((_, i) => i !== idx));
 
-  const doNewNote = () => {
-    setTriggered([]);
-    setCheckedActions({});
-    setMatchStatus(null);
-    setCopied(false);
-    setStaffCopied(false);
-  };
-
+  const doNewNote = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); setCopied(false); setStaffCopied(false); };
   const handleNewNote = () => {
     if (triggered.length === 0) { doNewNote(); return; }
     if (skipNewNoteWarning) { doNewNote(); return; }
-    setDontShowAgainChecked(false);
-    setShowNewNoteWarning(true);
+    setDontShowAgainChecked(false); setShowNewNoteWarning(true);
   };
-
   const confirmNewNote = () => {
-    if (dontShowAgainChecked) {
-      setSkipNewNoteWarning(true);
-      try { localStorage.setItem("lab_skip_new_note_warning", "true"); } catch {}
-    }
-    setShowNewNoteWarning(false);
-    doNewNote();
+    if (dontShowAgainChecked) { setSkipNewNoteWarning(true); try { localStorage.setItem("lab_skip_new_note_warning","true"); } catch {} }
+    setShowNewNoteWarning(false); doNewNote();
   };
-
-  const clearAll = () => doNewNote();
 
   const copyNote = () => {
     navigator.clipboard.writeText(fullNote).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      // increment notes counter
+      fetch("/api/stats?action=note").then(r=>r.json()).then(d=>setStats(d)).catch(()=>{});
     });
   };
 
-  // ── Snippet editing ────────────────────────────────────────────────────────
-  const startEdit = (s) => {
-    setEditingId(s.id);
-    setEditText(s.text);
-    setEditActions((s.clinicianActions || s.actions || []).join("\n"));
-    setEditStaffActions((s.staffActions || []).join("\n"));
-  };
+  // ── Snippet editing ───────────────────────────────────────────────────────
+  const startEdit = (s) => { setEditingId(s.id); setEditText(s.text); setEditActions((s.clinicianActions||s.actions||[]).join("\n")); setEditStaffActions((s.staffActions||[]).join("\n")); };
   const saveEdit = () => {
     const updated = snippets.map(s => s.id === editingId
-      ? { ...s, text: editText,
-          clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean),
-          staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean) }
+      ? { ...s, text: editText, clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean), staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean) }
       : s);
     setSnippets(updated); saveSnippets(updated); setEditingId(null);
   };
@@ -375,42 +366,43 @@ export default function App() {
     if (!def) return;
     const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, clinicianActions: def.clinicianActions, staffActions: def.staffActions } : s);
     setSnippets(updated); saveSnippets(updated);
-    if (editingId === id) {
-      setEditText(def.text);
-      setEditActions(def.clinicianActions.join("\n"));
-      setEditStaffActions(def.staffActions.join("\n"));
-    }
+    if (editingId === id) { setEditText(def.text); setEditActions(def.clinicianActions.join("\n")); setEditStaffActions(def.staffActions.join("\n")); }
   };
-  const deleteCustom = (id) => {
+  const deleteSnippet = (id) => {
+    const isDefault = DEFAULT_SNIPPETS.some(s => s.id === id);
+    if (isDefault) {
+      const newDeleted = [...deletedIds, id];
+      setDeletedIds(newDeleted); saveDeletedIds(newDeleted);
+    }
     const updated = snippets.filter(s => s.id !== id);
     setSnippets(updated); saveSnippets(updated);
   };
+  const restoreDeleted = () => {
+    setDeletedIds([]); saveDeletedIds([]);
+    setSnippets(loadSnippets([]));
+  };
 
-  // ── Header/footer editing ──────────────────────────────────────────────────
+  // ── Header/footer ─────────────────────────────────────────────────────────
   const saveHf = () => { saveHeaderFooter(editHf); setHf(editHf); setEditHf(null); };
 
-  // ── Add custom trigger ─────────────────────────────────────────────────────
+  // ── Custom trigger ────────────────────────────────────────────────────────
   const saveCustom = () => {
     if (!newTrigger.trigger.trim() || !newTrigger.text.trim()) return;
-    const group = newTrigger.useNew && newTrigger.newGroup.trim()
-      ? newTrigger.newGroup.trim()
-      : (newTrigger.group || "Other");
+    const group = newTrigger.useNew && newTrigger.newGroup.trim() ? newTrigger.newGroup.trim() : (newTrigger.group || "Other");
     const id = `custom_${Date.now()}`;
     const s = { id, group, trigger: newTrigger.trigger.trim(), text: newTrigger.text.trim(),
       clinicianActions: newTrigger.actions.split("\n").map(a=>a.trim()).filter(Boolean),
-      staffActions: newTrigger.staffActions.split("\n").map(a=>a.trim()).filter(Boolean),
-      custom:true };
+      staffActions: newTrigger.staffActions.split("\n").map(a=>a.trim()).filter(Boolean), custom:true };
     const updated = [...snippets, s];
     setSnippets(updated); saveSnippets(updated);
     setNewTrigger({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
     setShowAddCustom(false);
   };
 
-  // ── Export / Import ────────────────────────────────────────────────────────
+  // ── Export / Import ───────────────────────────────────────────────────────
   const exportData = () => {
     const custom = snippets.filter(s => isCustomized(s));
-    const hfData = hf;
-    return JSON.stringify({ snippets: custom, headerFooter: hfData }, null, 2);
+    return JSON.stringify({ snippets: custom, headerFooter: hf, deletedIds, groupOrder: groupOrder || [] }, null, 2);
   };
   const handleDownload = () => {
     const blob = new Blob([exportData()], { type:"application/json" });
@@ -419,13 +411,7 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
   const handleEmailExport = () => {
-    const data = exportData();
-    const blob = new Blob([data], { type:"application/json" });
-    const url = URL.createObjectURL(blob);
-    const subject = encodeURIComponent("Lab Note Builder – My Customizations");
-    const body = encodeURIComponent("My Lab Note Builder customizations are attached.");
-    window.location.href = `mailto:${exportEmail}?subject=${subject}&body=${body}`;
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    window.location.href = `mailto:${exportEmail}?subject=${encodeURIComponent("Lab Note Builder – My Customizations")}&body=${encodeURIComponent("My Lab Note Builder customizations are attached.")}`;
   };
   const handleImportFile = (file) => {
     const reader = new FileReader();
@@ -442,147 +428,147 @@ export default function App() {
           setSnippets(updated); saveSnippets(updated);
         }
         if (data.headerFooter) { const newHf = { ...hf, ...data.headerFooter }; setHf(newHf); saveHeaderFooter(newHf); }
-        setShowImport(false);
-        alert("Import successful!");
+        if (data.deletedIds) { setDeletedIds(data.deletedIds); saveDeletedIds(data.deletedIds); }
+        if (data.groupOrder) { setGroupOrder(data.groupOrder); saveGroupOrder(data.groupOrder); }
+        setShowImport(false); alert("Import successful!");
       } catch { alert("Could not read file — make sure it is a valid export file."); }
     };
     reader.readAsText(file);
   };
 
-  // ── Toggle left accordion ──────────────────────────────────────────────────
-  const toggleLeft = (g) => setLeftOpen(p => ({ ...p, [g]: !p[g] }));
+  // ── Drag and drop group reorder ───────────────────────────────────────────
+  const handleDragStart = (e, groupName) => {
+    setDraggingGroup(groupName);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const handleDragOver = (e, groupName) => {
+    e.preventDefault();
+    if (groupName !== draggingGroup) setDragOverGroup(groupName);
+  };
+  const handleDrop = (e, targetGroup) => {
+    e.preventDefault();
+    if (!draggingGroup || draggingGroup === targetGroup) { setDraggingGroup(null); setDragOverGroup(null); return; }
+    const currentOrder = groups.map(g => g.name);
+    const fromIdx = currentOrder.indexOf(draggingGroup);
+    const toIdx = currentOrder.indexOf(targetGroup);
+    const newOrder = [...currentOrder];
+    newOrder.splice(fromIdx, 1);
+    newOrder.splice(toIdx, 0, draggingGroup);
+    setGroupOrder(newOrder); saveGroupOrder(newOrder);
+    setDraggingGroup(null); setDragOverGroup(null);
+  };
+
+  // ── Manage accordion ──────────────────────────────────────────────────────
   const toggleManage = (g) => setManageOpen(p => ({ ...p, [g]: !p[g] }));
-
-  // ── Existing groups for custom trigger dropdown ────────────────────────────
   const existingGroups = [...new Set(snippets.map(s => s.group || "Other").filter(g => g !== "Other"))].sort();
+  const conflicts = getConflicts(triggered, snippets);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight:"100vh", background:"#eff6ff", fontFamily:"'Inter',system-ui,sans-serif" }}>
-
-      {/* ── Outer frame centering wrapper ── */}
       <div style={{ maxWidth:1280, margin:"0 auto", minHeight:"100vh", background:"white", boxShadow:"0 0 40px rgba(30,64,175,0.08)" }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)", padding:"0 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", height:58, boxShadow:"0 2px 8px rgba(30,64,175,0.3)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
-          </svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
           <div>
             <span style={{ color:"white", fontWeight:700, fontSize:16, letterSpacing:"-0.01em" }}>Lab Results Note Builder</span>
             <span style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginLeft:10, fontStyle:"italic" }}>Speedy lab results notes in your words</span>
           </div>
         </div>
-
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          {/* New Note button */}
-          <button onClick={handleNewNote} style={{
-            display:"flex", alignItems:"center", gap:6,
-            background:"rgba(255,255,255,0.15)", color:"white",
-            border:"1px solid rgba(255,255,255,0.3)", borderRadius:7,
-            padding:"5px 14px", cursor:"pointer", fontSize:13, fontWeight:500,
-            transition:"background 0.15s"
-          }}
-            onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.25)"}
-            onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,0.15)"}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
+          <button onClick={handleNewNote} style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", color:"white", border:"1px solid rgba(255,255,255,0.3)", borderRadius:7, padding:"5px 14px", cursor:"pointer", fontSize:13, fontWeight:500 }}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New note
           </button>
-
-          {/* Slider toggle */}
           <div style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:30, padding:3, gap:2 }}>
             {[["compose","Compose Note"],["manage","Manage Snippets"]].map(([key,label]) => (
-              <button key={key} onClick={() => setActiveTab(key)} style={{
-                background: activeTab===key ? "white" : "transparent",
-                color: activeTab===key ? "#1e40af" : "rgba(255,255,255,0.85)",
-                border:"none", borderRadius:26, padding:"5px 16px", cursor:"pointer",
-                fontSize:13, fontWeight: activeTab===key ? 600 : 400,
-                transition:"all 0.2s", boxShadow: activeTab===key ? "0 1px 4px rgba(0,0,0,0.15)" : "none"
-              }}>{label}</button>
+              <button key={key} onClick={() => setActiveTab(key)} style={{ background: activeTab===key ? "white" : "transparent", color: activeTab===key ? "#1e40af" : "rgba(255,255,255,0.85)", border:"none", borderRadius:26, padding:"5px 16px", cursor:"pointer", fontSize:13, fontWeight: activeTab===key ? 600 : 400, transition:"all 0.2s", boxShadow: activeTab===key ? "0 1px 4px rgba(0,0,0,0.15)" : "none" }}>{label}</button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── COMPOSE TAB ── */}
+      {/* COMPOSE TAB */}
       {activeTab==="compose" && (
         <div style={{ maxWidth:1300, margin:"0 auto", padding:"1.25rem 1rem", display:"grid", gridTemplateColumns:"18% 1fr 26%", gap:"1rem" }}>
 
-          {/* ── LEFT COLUMN: Click-to-add menu ── */}
+          {/* LEFT COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
             <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"visible" }}>
               <div style={{ background:"#eff6ff", padding:"8px 12px", borderBottom:"1px solid #dbeafe", borderRadius:"12px 12px 0 0" }}>
-                <span style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Add by clicking</span>
+                <div style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Add by clicking</div>
+                <div style={{ fontSize:10, color:"#93c5fd", marginTop:2 }}>Click name to add normal · ▼ for others</div>
               </div>
-              {groups.map(({ name, snippets:gSnippets }) => (
-                <div key={name} style={{ borderBottom:"1px solid #f1f5f9" }}>
-                  <button onClick={() => toggleLeft(name)} style={{
-                    width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center",
-                    padding:"8px 12px", background:"none", border:"none", cursor:"pointer",
-                    fontSize:12, fontWeight:600, color:"#1e3a8a", textAlign:"left"
-                  }}>
-                    <span>{name}</span>
-                    <span style={{ fontSize:9, color:"#93c5fd", transform: leftOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s", flexShrink:0 }}>▼</span>
-                  </button>
-                  {leftOpen[name] && (
-                    <div style={{ background:"#f8fafc", borderTop:"1px solid #f1f5f9" }}>
-                      {gSnippets.filter(s => !s.ephemeral).map(s => (
-                        <div key={s.id} style={{ position:"relative" }} className="trigger-row">
-                          <button onClick={() => addTrigger(s.id)} style={{
-                            width:"100%", textAlign:"left", padding:"6px 12px",
-                            background:"none", border:"none", cursor:"pointer",
-                            fontSize:11, color:"#374151", borderBottom:"1px solid #f1f5f9",
-                            transition:"background 0.15s", lineHeight:1.4
-                          }}
-                            onMouseEnter={e => e.currentTarget.style.background="#dbeafe"}
-                            onMouseLeave={e => e.currentTarget.style.background="none"}
-                          >
-                            + {s.trigger}
-                          </button>
-                          <div className="snippet-tooltip">{s.text}</div>
-                        </div>
-                      ))}
-                      <button onClick={() => addWildcard(name)} style={{
-                        width:"100%", textAlign:"left", padding:"6px 12px",
-                        background:"none", border:"none", cursor:"pointer",
-                        fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9",
-                        transition:"background 0.15s"
-                      }}
-                        onMouseEnter={e => e.currentTarget.style.background="#ede9fe"}
-                        onMouseLeave={e => e.currentTarget.style.background="none"}
-                      >
-                        + {name}: ***
-                      </button>
+              {groups.map(({ name, snippets:gSnippets }) => {
+                const defaultId = GROUP_DEFAULT_ID[name];
+                const defaultSnippet = gSnippets.find(s => s.id === defaultId) || gSnippets[0];
+                const otherSnippets = gSnippets.filter(s => s.id !== defaultSnippet?.id && !s.ephemeral);
+                const expanded = leftExpanded[name];
+                const isDragOver = dragOverGroup === name;
+                const isDragging = draggingGroup === name;
+                return (
+                  <div key={name}
+                    draggable
+                    onDragStart={e => handleDragStart(e, name)}
+                    onDragOver={e => handleDragOver(e, name)}
+                    onDragLeave={() => setDragOverGroup(null)}
+                    onDrop={e => handleDrop(e, name)}
+                    style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
+                    <div style={{ display:"flex", alignItems:"center" }}>
+                      {/* Drag handle */}
+                      <div style={{ padding:"0 6px 0 8px", cursor:"grab", color:"#cbd5e1", fontSize:12, userSelect:"none" }} title="Drag to reorder">⠿</div>
+                      {/* Header = default trigger clickable */}
+                      <div className="trigger-row" style={{ flex:1, position:"relative" }}>
+                        <button onClick={() => defaultSnippet && addTrigger(defaultSnippet.id)}
+                          style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color:"#1e3a8a" }}
+                          onMouseEnter={e=>e.currentTarget.style.color="#2563eb"} onMouseLeave={e=>e.currentTarget.style.color="#1e3a8a"}>
+                          + {name}
+                        </button>
+                        {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
+                      </div>
+                      {/* Expand arrow */}
+                      {(otherSnippets.length > 0) && (
+                        <button onClick={() => setLeftExpanded(p=>({...p,[name]:!p[name]}))}
+                          style={{ padding:"8px 10px", background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:10, transform: expanded?"rotate(180deg)":"rotate(0)", transition:"0.2s", flexShrink:0 }}>▼</button>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                    {expanded && (
+                      <div style={{ background:"#f8fafc", borderTop:"1px solid #f1f5f9" }}>
+                        {otherSnippets.map(s => (
+                          <div key={s.id} className="trigger-row" style={{ position:"relative" }}>
+                            <button onClick={() => addTrigger(s.id)}
+                              style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#374151", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
+                              onMouseEnter={e=>e.currentTarget.style.background="#dbeafe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                              + {s.trigger}
+                            </button>
+                            <div className="snippet-tooltip">{s.text}</div>
+                          </div>
+                        ))}
+                        <button onClick={() => addWildcard(name)}
+                          style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
+                          onMouseEnter={e=>e.currentTarget.style.background="#ede9fe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                          + {name}: ***
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* ── CENTER COLUMN ── */}
+          {/* CENTER COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
-
-            {/* Mic card */}
+            {/* Mic */}
             <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
               <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.05em" }}>Voice Input</div>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <button onClick={isListening ? stopListening : startListening} style={{
-                  width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0,
-                  background: isListening ? "#ef4444" : "#2563eb",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)",
-                  transition:"all 0.2s"
-                }}>
+                <button onClick={isListening ? stopListening : startListening} style={{ width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0, background: isListening ? "#ef4444" : "#2563eb", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)", transition:"all 0.2s" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    {isListening
-                      ? <rect x="6" y="6" width="12" height="12" rx="2"/>
-                      : <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>
-                    }
+                    {isListening ? <rect x="6" y="6" width="12" height="12" rx="2"/> : <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>}
                   </svg>
                 </button>
                 <div style={{ flex:1 }}>
@@ -601,7 +587,7 @@ export default function App() {
               <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Triggered ({triggered.length})</div>
-                  <button onClick={clearAll} style={{ fontSize:11, color:"#dc2626", background:"none", border:"none", cursor:"pointer" }}>Clear all</button>
+                  <button onClick={doNewNote} style={{ fontSize:11, color:"#dc2626", background:"none", border:"none", cursor:"pointer" }}>Clear all</button>
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
                   {triggered.map((id, idx) => {
@@ -609,14 +595,9 @@ export default function App() {
                     if (!s) return null;
                     const conflict = conflicts.has(id);
                     return (
-                      <div key={`${id}-${idx}`} style={{
-                        display:"flex", alignItems:"center", gap:5,
-                        background: conflict ? "#fefce8" : "#eff6ff",
-                        border: `1px solid ${conflict ? "#fde047" : "#93c5fd"}`,
-                        borderRadius:20, padding:"4px 10px 4px 12px"
-                      }}>
-                        <span style={{ fontSize:12, color: conflict ? "#854d0e" : "#1e40af", fontWeight:500 }}>{s.trigger}</span>
-                        <button onClick={() => removeTriggered(idx)} style={{ background:"none", border:"none", cursor:"pointer", color: conflict ? "#fde047" : "#93c5fd", fontSize:15, lineHeight:1, padding:0 }}>×</button>
+                      <div key={`${id}-${idx}`} style={{ display:"flex", alignItems:"center", gap:5, background: conflict?"#fefce8":"#eff6ff", border:`1px solid ${conflict?"#fde047":"#93c5fd"}`, borderRadius:20, padding:"4px 10px 4px 12px" }}>
+                        <span style={{ fontSize:12, color: conflict?"#854d0e":"#1e40af", fontWeight:500 }}>{s.trigger}</span>
+                        <button onClick={() => removeTriggered(idx)} style={{ background:"none", border:"none", cursor:"pointer", color: conflict?"#fde047":"#93c5fd", fontSize:15, lineHeight:1, padding:0 }}>×</button>
                       </div>
                     );
                   })}
@@ -630,11 +611,7 @@ export default function App() {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Patient Note Preview</div>
                 {noteLines.length > 0 && (
-                  <button onClick={copyNote} style={{
-                    display:"flex", alignItems:"center", gap:6, background: copied ? "#16a34a" : "#2563eb",
-                    color:"white", border:"none", borderRadius:7, padding:"6px 14px", cursor:"pointer",
-                    fontSize:12, fontWeight:500, transition:"background 0.2s"
-                  }}>
+                  <button onClick={copyNote} style={{ display:"flex", alignItems:"center", gap:6, background: copied?"#16a34a":"#2563eb", color:"white", border:"none", borderRadius:7, padding:"6px 14px", cursor:"pointer", fontSize:12, fontWeight:500, transition:"background 0.2s" }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       {copied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
                     </svg>
@@ -658,16 +635,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: Clinician To Do + Staff To Do ── */}
+          {/* RIGHT COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
-
             {/* Clinician To Do */}
-            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", position:"sticky", top:"1rem" }}>
+            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 <div style={{ fontSize:11, fontWeight:700, color:"#92400e", textTransform:"uppercase", letterSpacing:"0.05em" }}>Clinician To Do</div>
               </div>
               <div style={{ fontSize:11, color:"#9ca3af", marginBottom:12 }}>Lab orders · Rx · Referrals</div>
@@ -676,9 +649,8 @@ export default function App() {
                 : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                     {allClinicianActions.map((a, i) => (
                       <label key={i} style={{ display:"flex", alignItems:"flex-start", gap:9, cursor:"pointer" }}>
-                        <input type="checkbox" checked={!!checkedActions[a]} onChange={() => setCheckedActions(p=>({...p,[a]:!p[a]}))}
-                          style={{ marginTop:2, accentColor:"#2563eb", width:14, height:14, flexShrink:0 }} />
-                        <span style={{ fontSize:12, lineHeight:1.5, color: checkedActions[a] ? "#9ca3af" : "#1f2937", textDecoration: checkedActions[a] ? "line-through" : "none" }}>{a}</span>
+                        <input type="checkbox" checked={!!checkedActions[a]} onChange={() => setCheckedActions(p=>({...p,[a]:!p[a]}))} style={{ marginTop:2, accentColor:"#2563eb", width:14, height:14, flexShrink:0 }} />
+                        <span style={{ fontSize:12, lineHeight:1.5, color: checkedActions[a]?"#9ca3af":"#1f2937", textDecoration: checkedActions[a]?"line-through":"none" }}>{a}</span>
                       </label>
                     ))}
                   </div>
@@ -694,22 +666,12 @@ export default function App() {
             <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   <div style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Staff To Do</div>
                 </div>
                 {allStaffActions.length > 0 && (
-                  <button onClick={() => {
-                    const text = allStaffActions.map(a => `• ${a}`).join("\n");
-                    navigator.clipboard.writeText(text).then(() => { setStaffCopied(true); setTimeout(() => setStaffCopied(false), 2000); });
-                  }} style={{
-                    display:"flex", alignItems:"center", gap:5,
-                    background: staffCopied ? "#16a34a" : "#eff6ff",
-                    color: staffCopied ? "white" : "#1e40af",
-                    border:`1px solid ${staffCopied ? "#16a34a" : "#bfdbfe"}`,
-                    borderRadius:6, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:500, transition:"all 0.2s"
-                  }}>
+                  <button onClick={() => { const text = allStaffActions.map(a=>`• ${a}`).join("\n"); navigator.clipboard.writeText(text).then(()=>{ setStaffCopied(true); setTimeout(()=>setStaffCopied(false),2000); }); }}
+                    style={{ display:"flex", alignItems:"center", gap:5, background: staffCopied?"#16a34a":"#eff6ff", color: staffCopied?"white":"#1e40af", border:`1px solid ${staffCopied?"#16a34a":"#bfdbfe"}`, borderRadius:6, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:500, transition:"all 0.2s" }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       {staffCopied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
                     </svg>
@@ -722,7 +684,7 @@ export default function App() {
                 ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Staff tasks appear here when relevant triggers are added</div>
                 : <div style={{ background:"#f8fafc", borderRadius:8, padding:"10px 12px", border:"1px solid #e5e7eb" }}>
                     {allStaffActions.map((a, i) => (
-                      <div key={i} style={{ display:"flex", gap:8, marginBottom: i < allStaffActions.length-1 ? 8 : 0, alignItems:"flex-start" }}>
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom: i<allStaffActions.length-1?8:0, alignItems:"flex-start" }}>
                         <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:1 }}>•</span>
                         <span style={{ fontSize:12, lineHeight:1.5, color:"#1f2937" }}>{a}</span>
                       </div>
@@ -730,15 +692,30 @@ export default function App() {
                   </div>
               }
             </div>
+
+            {/* Stats counter */}
+            <div style={{ background:"#f8fafc", borderRadius:12, padding:"1rem 1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.05)", border:"1px solid #e5e7eb" }}>
+              <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Site Activity</div>
+              <div style={{ display:"flex", justifyContent:"space-around" }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:700, color:"#1e40af" }}>{stats.visitors === "…" ? "…" : Number(stats.visitors).toLocaleString()}</div>
+                  <div style={{ fontSize:10, color:"#6b7280", marginTop:2 }}>Total visits</div>
+                </div>
+                <div style={{ width:1, background:"#e5e7eb" }} />
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:700, color:"#1e40af" }}>{stats.notes === "…" ? "…" : Number(stats.notes).toLocaleString()}</div>
+                  <div style={{ fontSize:10, color:"#6b7280", marginTop:2 }}>Notes created</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── MANAGE SNIPPETS TAB ── */}
+      {/* MANAGE SNIPPETS TAB */}
       {activeTab==="manage" && (
         <div style={{ maxWidth:860, margin:"0 auto", padding:"1.25rem 1rem" }}>
-
-          {/* Header/footer edit */}
+          {/* Header/footer */}
           <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"1rem" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div style={{ fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Header &amp; Footer</div>
@@ -747,15 +724,13 @@ export default function App() {
             {editHf ? (
               <div style={{ marginTop:12 }}>
                 <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:4 }}>Header</div>
-                <textarea value={editHf.header} onChange={e => setEditHf(p=>({...p,header:e.target.value}))}
-                  style={{ width:"100%", minHeight:60, fontSize:13, border:"1px solid #d1d5db", borderRadius:8, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                <textarea value={editHf.header} onChange={e=>setEditHf(p=>({...p,header:e.target.value}))} style={{ width:"100%", minHeight:60, fontSize:13, border:"1px solid #d1d5db", borderRadius:8, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                 <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:4 }}>Footer</div>
-                <textarea value={editHf.footer} onChange={e => setEditHf(p=>({...p,footer:e.target.value}))}
-                  style={{ width:"100%", minHeight:60, fontSize:13, border:"1px solid #d1d5db", borderRadius:8, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                <textarea value={editHf.footer} onChange={e=>setEditHf(p=>({...p,footer:e.target.value}))} style={{ width:"100%", minHeight:60, fontSize:13, border:"1px solid #d1d5db", borderRadius:8, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                 <div style={{ display:"flex", gap:8, marginTop:10 }}>
                   <button onClick={saveHf} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"6px 14px", cursor:"pointer" }}>Save</button>
                   <button onClick={() => setEditHf(null)} style={{ fontSize:12, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"6px 14px", cursor:"pointer" }}>Cancel</button>
-                  <button onClick={() => { const def={header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; setEditHf(def); }} style={{ fontSize:12, background:"none", color:"#dc2626", border:"1px solid #fee2e2", borderRadius:7, padding:"6px 14px", cursor:"pointer", marginLeft:"auto" }}>Reset to default</button>
+                  <button onClick={() => setEditHf({header:DEFAULT_HEADER,footer:DEFAULT_FOOTER})} style={{ fontSize:12, background:"none", color:"#dc2626", border:"1px solid #fee2e2", borderRadius:7, padding:"6px 14px", cursor:"pointer", marginLeft:"auto" }}>Reset to default</button>
                 </div>
               </div>
             ) : (
@@ -766,21 +741,20 @@ export default function App() {
             )}
           </div>
 
-          {/* Export / Import / Add Custom buttons */}
+          {/* Action buttons */}
           <div style={{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap" }}>
             <button onClick={() => setShowAddCustom(true)} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 14px", cursor:"pointer", fontWeight:500 }}>+ Add custom trigger</button>
+            {deletedIds.length > 0 && (
+              <button onClick={restoreDeleted} style={{ fontSize:12, background:"white", color:"#16a34a", border:"1px solid #bbf7d0", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>↩ Restore deleted triggers ({deletedIds.length})</button>
+            )}
             <button onClick={() => setShowExport(true)} style={{ fontSize:12, background:"white", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>Export customizations</button>
             <button onClick={() => setShowImport(true)} style={{ fontSize:12, background:"white", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>Import customizations</button>
           </div>
 
-          {/* Snippets accordion by group */}
-          {groups.map(({ name, snippets: gSnippets }) => (
+          {/* Snippets accordion — alphabetical in manage */}
+          {getGroupsOrdered(snippets, null).map(({ name, snippets: gSnippets }) => (
             <div key={name} style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"0.75rem", overflow:"hidden" }}>
-              <button onClick={() => toggleManage(name)} style={{
-                width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center",
-                padding:"12px 18px", background: manageOpen[name] ? "#eff6ff" : "white",
-                border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a"
-              }}>
+              <button onClick={() => toggleManage(name)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 18px", background: manageOpen[name]?"#eff6ff":"white", border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a" }}>
                 <span>{name}</span>
                 <span style={{ fontSize:11, color:"#93c5fd", transform: manageOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s" }}>▼</span>
               </button>
@@ -796,24 +770,21 @@ export default function App() {
                         {editingId !== s.id && (
                           <div style={{ display:"flex", gap:6, flexShrink:0 }}>
                             <button onClick={() => startEdit(s)} style={{ fontSize:11, color:"#2563eb", background:"none", border:"1px solid #bfdbfe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Edit</button>
-                            {s.custom
-                              ? <button onClick={() => deleteCustom(s.id)} style={{ fontSize:11, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Delete</button>
-                              : isCustomized(s) && <button onClick={() => resetToDefault(s.id)} style={{ fontSize:11, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Reset</button>
-                            }
+                            <button onClick={() => deleteSnippet(s.id)} style={{ fontSize:11, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Delete</button>
+                            {!s.custom && isCustomized(s) && (
+                              <button onClick={() => resetToDefault(s.id)} style={{ fontSize:11, color:"#6b7280", background:"none", border:"1px solid #e5e7eb", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Reset</button>
+                            )}
                           </div>
                         )}
                       </div>
                       {editingId === s.id ? (
                         <div style={{ marginTop:10 }}>
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing text</div>
-                          <textarea value={editText} onChange={e=>setEditText(e.target.value)}
-                            style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line)</div>
-                          <textarea value={editActions} onChange={e=>setEditActions(e.target.value)}
-                            style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea value={editActions} onChange={e=>setEditActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line)</div>
-                          <textarea value={editStaffActions} onChange={e=>setEditStaffActions(e.target.value)}
-                            style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea value={editStaffActions} onChange={e=>setEditStaffActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ display:"flex", gap:7, marginTop:9 }}>
                             <button onClick={saveEdit} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:6, padding:"6px 13px", cursor:"pointer" }}>Save</button>
                             <button onClick={()=>setEditingId(null)} style={{ fontSize:12, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:6, padding:"6px 13px", cursor:"pointer" }}>Cancel</button>
@@ -832,104 +803,65 @@ export default function App() {
         </div>
       )}
 
-      {/* ── MODAL: Add custom trigger ── */}
+      {/* MODAL: Add custom trigger */}
       {showAddCustom && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
           <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:500, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a", marginBottom:14 }}>Add custom trigger &amp; snippet</div>
-            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger phrase (what you speak or click)</div>
-            <input value={newTrigger.trigger} onChange={e=>setNewTrigger(p=>({...p,trigger:e.target.value}))}
-              placeholder="e.g. Lipids normal" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger phrase</div>
+            <input value={newTrigger.trigger} onChange={e=>setNewTrigger(p=>({...p,trigger:e.target.value}))} placeholder="e.g. Lipids normal" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing snippet text</div>
-            <textarea value={newTrigger.text} onChange={e=>setNewTrigger(p=>({...p,text:e.target.value}))}
-              placeholder="Text that appears in the note…" style={{ width:"100%", minHeight:80, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
-            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line, optional)</div>
-            <textarea value={newTrigger.actions} onChange={e=>setNewTrigger(p=>({...p,actions:e.target.value}))}
-              placeholder="Optional clinician actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
-            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line, optional)</div>
-            <textarea value={newTrigger.staffActions} onChange={e=>setNewTrigger(p=>({...p,staffActions:e.target.value}))}
-              placeholder="Optional staff actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
+            <textarea value={newTrigger.text} onChange={e=>setNewTrigger(p=>({...p,text:e.target.value}))} placeholder="Text that appears in the note…" style={{ width:"100%", minHeight:80, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Clinician action items (one per line, optional)</div>
+            <textarea value={newTrigger.actions} onChange={e=>setNewTrigger(p=>({...p,actions:e.target.value}))} placeholder="Optional clinician actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Staff action items (one per line, optional)</div>
+            <textarea value={newTrigger.staffActions} onChange={e=>setNewTrigger(p=>({...p,staffActions:e.target.value}))} placeholder="Optional staff actions…" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:5 }}>Lab group</div>
             <div style={{ display:"flex", gap:8, marginBottom:8, flexWrap:"wrap" }}>
               {existingGroups.map(g => (
-                <button key={g} onClick={() => setNewTrigger(p=>({...p,group:g,useNew:false}))} style={{
-                  fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid",
-                  borderColor: newTrigger.group===g && !newTrigger.useNew ? "#2563eb" : "#d1d5db",
-                  background: newTrigger.group===g && !newTrigger.useNew ? "#eff6ff" : "white",
-                  color: newTrigger.group===g && !newTrigger.useNew ? "#1e40af" : "#374151",
-                  cursor:"pointer"
-                }}>{g}</button>
+                <button key={g} onClick={() => setNewTrigger(p=>({...p,group:g,useNew:false}))} style={{ fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid", borderColor: newTrigger.group===g&&!newTrigger.useNew?"#2563eb":"#d1d5db", background: newTrigger.group===g&&!newTrigger.useNew?"#eff6ff":"white", color: newTrigger.group===g&&!newTrigger.useNew?"#1e40af":"#374151", cursor:"pointer" }}>{g}</button>
               ))}
-              <button onClick={() => setNewTrigger(p=>({...p,group:"Other",useNew:false}))} style={{
-                fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid",
-                borderColor: newTrigger.group==="Other" && !newTrigger.useNew ? "#2563eb" : "#d1d5db",
-                background: newTrigger.group==="Other" && !newTrigger.useNew ? "#eff6ff" : "white",
-                color: newTrigger.group==="Other" && !newTrigger.useNew ? "#1e40af" : "#374151",
-                cursor:"pointer"
-              }}>Other</button>
-              <button onClick={() => setNewTrigger(p=>({...p,useNew:true,group:""}))} style={{
-                fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid",
-                borderColor: newTrigger.useNew ? "#2563eb" : "#d1d5db",
-                background: newTrigger.useNew ? "#eff6ff" : "white",
-                color: newTrigger.useNew ? "#1e40af" : "#374151",
-                cursor:"pointer"
-              }}>+ New group</button>
+              <button onClick={() => setNewTrigger(p=>({...p,group:"Other",useNew:false}))} style={{ fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid", borderColor: newTrigger.group==="Other"&&!newTrigger.useNew?"#2563eb":"#d1d5db", background: newTrigger.group==="Other"&&!newTrigger.useNew?"#eff6ff":"white", color: newTrigger.group==="Other"&&!newTrigger.useNew?"#1e40af":"#374151", cursor:"pointer" }}>Other</button>
+              <button onClick={() => setNewTrigger(p=>({...p,useNew:true,group:""}))} style={{ fontSize:12, padding:"4px 10px", borderRadius:15, border:"1px solid", borderColor: newTrigger.useNew?"#2563eb":"#d1d5db", background: newTrigger.useNew?"#eff6ff":"white", color: newTrigger.useNew?"#1e40af":"#374151", cursor:"pointer" }}>+ New group</button>
             </div>
-            {newTrigger.useNew && (
-              <input value={newTrigger.newGroup} onChange={e=>setNewTrigger(p=>({...p,newGroup:e.target.value}))}
-                placeholder="New lab group name" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
-            )}
+            {newTrigger.useNew && <input value={newTrigger.newGroup} onChange={e=>setNewTrigger(p=>({...p,newGroup:e.target.value}))} placeholder="New lab group name" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />}
             <div style={{ display:"flex", gap:8, marginTop:14 }}>
-              <button onClick={saveCustom} disabled={!newTrigger.trigger.trim()||!newTrigger.text.trim()} style={{
-                fontSize:13, background: (!newTrigger.trigger.trim()||!newTrigger.text.trim()) ? "#93c5fd" : "#2563eb",
-                color:"white", border:"none", borderRadius:7, padding:"7px 16px", cursor:"pointer", fontWeight:500
-              }}>Add trigger</button>
+              <button onClick={saveCustom} disabled={!newTrigger.trigger.trim()||!newTrigger.text.trim()} style={{ fontSize:13, background: (!newTrigger.trigger.trim()||!newTrigger.text.trim())?"#93c5fd":"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 16px", cursor:"pointer", fontWeight:500 }}>Add trigger</button>
               <button onClick={() => setShowAddCustom(false)} style={{ fontSize:13, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"7px 16px", cursor:"pointer" }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── MODAL: Export ── */}
+      {/* MODAL: Export */}
       {showExport && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
           <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:420, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a", marginBottom:12 }}>Export customizations</div>
-            <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Export your customized snippets and header/footer so you can import them in another browser.</div>
-            <button onClick={handleDownload} style={{ width:"100%", fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:8, padding:"9px", cursor:"pointer", fontWeight:500, marginBottom:10 }}>
-              ↓ Download file
-            </button>
+            <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Exports your customized snippets, header/footer, deleted triggers, and group order.</div>
+            <button onClick={handleDownload} style={{ width:"100%", fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:8, padding:"9px", cursor:"pointer", fontWeight:500, marginBottom:10 }}>↓ Download file</button>
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:5 }}>Or email to:</div>
             <div style={{ display:"flex", gap:7 }}>
-              <input value={exportEmail} onChange={e=>setExportEmail(e.target.value)} placeholder="your@email.com"
-                style={{ flex:1, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px" }} />
-              <button onClick={handleEmailExport} disabled={!exportEmail.trim()} style={{ fontSize:13, background: exportEmail.trim() ? "#2563eb" : "#93c5fd", color:"white", border:"none", borderRadius:7, padding:"7px 12px", cursor:"pointer" }}>Send</button>
+              <input value={exportEmail} onChange={e=>setExportEmail(e.target.value)} placeholder="your@email.com" style={{ flex:1, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px" }} />
+              <button onClick={handleEmailExport} disabled={!exportEmail.trim()} style={{ fontSize:13, background: exportEmail.trim()?"#2563eb":"#93c5fd", color:"white", border:"none", borderRadius:7, padding:"7px 12px", cursor:"pointer" }}>Send</button>
             </div>
             <button onClick={() => setShowExport(false)} style={{ marginTop:14, fontSize:12, background:"none", color:"#6b7280", border:"none", cursor:"pointer" }}>Close</button>
           </div>
         </div>
       )}
 
-      {/* ── MODAL: Import ── */}
+      {/* MODAL: Import */}
       {showImport && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
           <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:420, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a", marginBottom:12 }}>Import customizations</div>
-            <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Imported customizations will overwrite any matching local edits. Snippets not in the import file will be kept.</div>
-            <div
-              onDragOver={e => { e.preventDefault(); setImportDrag(true); }}
-              onDragLeave={() => setImportDrag(false)}
-              onDrop={e => { e.preventDefault(); setImportDrag(false); const f=e.dataTransfer.files[0]; if(f) handleImportFile(f); }}
-              style={{
-                border:`2px dashed ${importDrag ? "#2563eb" : "#bfdbfe"}`,
-                background: importDrag ? "#eff6ff" : "#f8fafc",
-                borderRadius:10, padding:"2rem", textAlign:"center", marginBottom:14, transition:"all 0.2s"
-              }}
-            >
+            <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Imported data will overwrite matching local edits. Snippets not in the import file will be kept.</div>
+            <div onDragOver={e=>{e.preventDefault();setImportDrag(true);}} onDragLeave={()=>setImportDrag(false)} onDrop={e=>{e.preventDefault();setImportDrag(false);const f=e.dataTransfer.files[0];if(f)handleImportFile(f);}}
+              style={{ border:`2px dashed ${importDrag?"#2563eb":"#bfdbfe"}`, background: importDrag?"#eff6ff":"#f8fafc", borderRadius:10, padding:"2rem", textAlign:"center", marginBottom:14, transition:"all 0.2s" }}>
               <div style={{ fontSize:13, color:"#6b7280", marginBottom:10 }}>Drag and drop your export file here</div>
               <label style={{ fontSize:12, background:"#2563eb", color:"white", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>
                 Or select file
-                <input type="file" accept=".json" onChange={e => { if(e.target.files[0]) handleImportFile(e.target.files[0]); }} style={{ display:"none" }} />
+                <input type="file" accept=".json" onChange={e=>{if(e.target.files[0])handleImportFile(e.target.files[0]);}} style={{ display:"none" }} />
               </label>
             </div>
             <button onClick={() => setShowImport(false)} style={{ fontSize:12, background:"none", color:"#6b7280", border:"none", cursor:"pointer" }}>Cancel</button>
@@ -937,32 +869,22 @@ export default function App() {
         </div>
       )}
 
-      {/* ── MODAL: New Note warning ── */}
+      {/* MODAL: New note warning */}
       {showNewNoteWarning && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200 }}>
           <div style={{ background:"white", borderRadius:14, padding:"1.75rem", width:400, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a" }}>Start a new note?</div>
             </div>
-            <div style={{ fontSize:13, color:"#4b5563", lineHeight:1.6, marginBottom:20 }}>
-              This will clear the current note and all triggered items. Your snippets and settings in Manage Snippets will not be affected.
-            </div>
+            <div style={{ fontSize:13, color:"#4b5563", lineHeight:1.6, marginBottom:20 }}>This will clear the current note and all triggered items. Your snippets and settings in Manage Snippets will not be affected.</div>
             <label style={{ display:"flex", alignItems:"center", gap:9, marginBottom:20, cursor:"pointer" }}>
-              <input type="checkbox" checked={dontShowAgainChecked} onChange={e => setDontShowAgainChecked(e.target.checked)}
-                style={{ width:15, height:15, accentColor:"#2563eb", flexShrink:0 }} />
+              <input type="checkbox" checked={dontShowAgainChecked} onChange={e=>setDontShowAgainChecked(e.target.checked)} style={{ width:15, height:15, accentColor:"#2563eb", flexShrink:0 }} />
               <span style={{ fontSize:13, color:"#6b7280" }}>Don't show this warning again</span>
             </label>
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={confirmNewNote} style={{ fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"8px 18px", cursor:"pointer", fontWeight:500 }}>
-                Clear and start new
-              </button>
-              <button onClick={() => setShowNewNoteWarning(false)} style={{ fontSize:13, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"8px 18px", cursor:"pointer" }}>
-                Cancel
-              </button>
+              <button onClick={confirmNewNote} style={{ fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"8px 18px", cursor:"pointer", fontWeight:500 }}>Clear and start new</button>
+              <button onClick={() => setShowNewNoteWarning(false)} style={{ fontSize:13, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"8px 18px", cursor:"pointer" }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -972,17 +894,11 @@ export default function App() {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
-        @media(max-width:900px) { .three-col { grid-template-columns:1fr !important; } }
         .trigger-row { position:relative; }
-        .snippet-tooltip {
-          display:none; position:absolute; left:100%; top:0; z-index:50;
-          background:#1e3a8a; color:white; font-size:11px; line-height:1.5;
-          padding:8px 12px; border-radius:8px; width:260px; pointer-events:none;
-          box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:6px;
-        }
+        .snippet-tooltip { display:none; position:absolute; left:100%; top:0; z-index:50; background:#1e3a8a; color:white; font-size:11px; line-height:1.5; padding:8px 12px; border-radius:8px; width:260px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:6px; }
         .trigger-row:hover .snippet-tooltip { display:block; }
       `}</style>
-      </div>{/* end frame */}
+      </div>
     </div>
   );
 }
