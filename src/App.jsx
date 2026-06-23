@@ -20,11 +20,23 @@ const GROUP_DEFAULT_ID = {
   "HBV":            "hbv_immune",
   "Vitamin B12":    "b12_normal",
   "PSA":            "psa_normal_screening",
-  "Iron studies":   "iron_normal",
+  "Fe/TIBC/Ferr":   "iron_normal",
   "Testosterone":   "testosterone_normal",
   "Uric acid":      "uric_acid_normal",
   "Urinalysis":     "ua_normal",
   "Urine Culture":  "ucx_negative",
+};
+
+// Display abbreviations for left column labels
+const GROUP_ABBREV = {
+  "Microalbumin":   "Microalb",
+  "Lipoprotein(a)": "Lp(a)",
+  "Urine Culture":  "Urine Cx",
+  "Testosterone":   "Testost",
+  "Urinalysis":     "UA",
+  "Vitamin B12":    "Vit B12",
+  "Vitamin D":      "Vit D",
+  "Fe/TIBC/Ferr":   "Fe/TIBC/Ferr",
 };
 
 const DEFAULT_SNIPPETS = [
@@ -76,12 +88,12 @@ const DEFAULT_SNIPPETS = [
   { id:"psa_quite_elevated", group:"PSA", trigger:"PSA screening – quite elevated", synonyms:["PSA significantly high","PSA very elevated","high PSA needs urology"], text:"Your PSA test for prostate cancer screening is high and requires further evaluation. I am referring you to a urologist to discuss the best next steps. Please expect to hear about your referral within 1 week. Contact our office if you do not.", clinicianActions:["Refer to urology for elevated PSA"], staffActions:["Ensure urology referral is sent and patient is contacted within 1 week."] },
   { id:"psa_normal_prior_ca", group:"PSA", trigger:"PSA normal – prior prostate cancer", synonyms:["PSA undetectable prior prostate cancer","PSA okay history of prostate cancer"], text:"Your PSA level is low or undetectable, which is reassuring and does not show signs of recurrence of your prostate cancer. We should repeat this test in one year.", clinicianActions:[], staffActions:[] },
   { id:"psa_elevated_prior_ca", group:"PSA", trigger:"PSA elevated – prior prostate cancer", synonyms:["PSA rising prior prostate cancer","PSA up history of prostate cancer"], text:"Your PSA level is elevated. I'd like you to schedule a follow-up with your urologist to discuss the best next steps. If you don't have a current urologist, let me know and I can send a referral.", clinicianActions:["Refer to urology for elevated PSA — prior prostate cancer history"], staffActions:["Assist patient with urology referral or contact existing urologist's office."] },
-  { id:"iron_normal", group:"Iron studies", trigger:"Iron studies normal", synonyms:["iron normal","ferritin normal","iron panel normal"], text:"Your iron tests (iron, total iron binding capacity, and ferritin) are all within the normal range.", clinicianActions:[], staffActions:[] },
-  { id:"iron_deficiency_no_anemia_women", group:"Iron studies", trigger:"Iron deficiency – no anemia, menstruating women", synonyms:["iron low no anemia women","iron deficiency without anemia female","low iron stores menstruating women"], text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in 6 months. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
-  { id:"iron_deficiency_anemia_women", group:"Iron studies", trigger:"Iron deficiency anemia – menstruating women", synonyms:["iron deficiency anemia women","anemia from low iron female","iron deficiency anemia menstruating"], text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in 6 months. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency anemia to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
-  { id:"iron_deficiency_anemia_men", group:"Iron studies", trigger:"Iron deficiency anemia – men", synonyms:["iron deficiency anemia men","anemia from low iron male","iron deficiency anemia male"], text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:["Add iron deficiency anemia to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
-  { id:"iron_deficiency_no_anemia_men", group:"Iron studies", trigger:"Iron deficiency without anemia – men", synonyms:["iron low no anemia men","iron deficiency without anemia male","low iron stores men"], text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:["Add iron deficiency to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
-  { id:"ferritin_elevated", group:"Iron studies", trigger:"Ferritin elevated", synonyms:["high ferritin","ferritin too high","elevated ferritin level"], text:"Your ferritin level is higher than normal. Ferritin is a protein that stores iron, but it is also an inflammatory marker — it can be elevated with infection, inflammation, liver disease, or excess iron. At this level, no treatment is required. We can repeat this test with your next regularly planned blood tests.", clinicianActions:[], staffActions:[] },
+  { id:"iron_normal", group:"Fe/TIBC/Ferr", trigger:"Iron studies normal", synonyms:["iron normal","ferritin normal","iron panel normal"], text:"Your iron tests (iron, total iron binding capacity, and ferritin) are all within the normal range.", clinicianActions:[], staffActions:[] },
+  { id:"iron_deficiency_no_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency – no anemia, menstruating women", synonyms:["iron low no anemia women","iron deficiency without anemia female","low iron stores menstruating women"], text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in 6 months. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – menstruating women", synonyms:["iron deficiency anemia women","anemia from low iron female","iron deficiency anemia menstruating"], text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in 6 months. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency anemia to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_men", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – men", synonyms:["iron deficiency anemia men","anemia from low iron male","iron deficiency anemia male"], text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:["Add iron deficiency anemia to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"iron_deficiency_no_anemia_men", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency without anemia – men", synonyms:["iron low no anemia men","iron deficiency without anemia male","low iron stores men"], text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:["Add iron deficiency to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"ferritin_elevated", group:"Fe/TIBC/Ferr", trigger:"Ferritin elevated", synonyms:["high ferritin","ferritin too high","elevated ferritin level"], text:"Your ferritin level is higher than normal. Ferritin is a protein that stores iron, but it is also an inflammatory marker — it can be elevated with infection, inflammation, liver disease, or excess iron. At this level, no treatment is required. We can repeat this test with your next regularly planned blood tests.", clinicianActions:[], staffActions:[] },
   { id:"testosterone_normal", group:"Testosterone", trigger:"Testosterone normal", synonyms:["testosterone level normal","testosterone fine","T level normal"], text:"Your testosterone level is within the normal range.", clinicianActions:[], staffActions:[] },
   { id:"testosterone_low_first", group:"Testosterone", trigger:"Testosterone low (1st time)", synonyms:["testosterone low first time","low T first time","testosterone low initial"], text:"Your testosterone level is lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. We need to repeat this test at least once, at least 1 month after the last test. I've sent the order to your preferred lab. Testing before 10 AM gives the most reliable results. If the level is low a second time, we'll discuss treatment options.", clinicianActions:["Order repeat testosterone level (morning). Consider adding FSH, LH if not already done."], staffActions:[] },
   { id:"testosterone_low_confirmed", group:"Testosterone", trigger:"Testosterone low (at least twice)", synonyms:["low testosterone confirmed","testosterone low confirmed twice","low T confirmed"], text:"Your testosterone level has again come back lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss the findings and consider treatment options.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
@@ -114,7 +126,7 @@ function saveGroupOrder(order) { localStorage.setItem("lab_group_order", JSON.st
 
 function loadSnippets(deletedIds) {
   try {
-    const saved = localStorage.getItem("lab_snippets_v3");
+    const saved = localStorage.getItem("lab_snippets_v4");
     const deleted = deletedIds || loadDeletedIds();
     if (!saved) return DEFAULT_SNIPPETS.filter(s => !deleted.includes(s.id));
     const parsed = JSON.parse(saved);
@@ -132,7 +144,7 @@ function loadSnippets(deletedIds) {
     return [...merged, ...custom];
   } catch { return DEFAULT_SNIPPETS; }
 }
-function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v3", JSON.stringify(snippets)); }
+function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v4", JSON.stringify(snippets)); }
 function loadHeaderFooter() {
   try {
     // One-time migration: clear headerfooter cache on v3 upgrade
@@ -240,16 +252,16 @@ const TOUR_STEPS = [
     requireCompose:true, addSnippetId:"tsh_normal_not_on_meds" },
   { ref:"leftCol",       inHeader:false, title:"Add by clicking",
     body:"Click any lab name to instantly add its normal result to your note. You'll see a checkmark confirmation when it's added.",
-    requireCompose:true, addSnippetId:"bmp_normal" },
-  { ref:"expandArrow",   inHeader:false, title:"Expand for abnormals",
-    body:"Click the ▼ arrow to see options for abnormal results. Here we've added 'Mild anemia needs labs' — notice how both the Clinician To Do and Staff To Do panels populate automatically.",
+    requireCompose:true, addSnippetId:"bmp_normal", tooltipRight:true },
+  { ref:"cbcSection",    inHeader:false, title:"Expand for abnormals",
+    body:"Click the ▼ arrow to expand a lab and see abnormal options. Here we've added 'Mild anemia needs labs.'",
     requireCompose:true, addSnippetId:"mild_anemia", expandGroup:"CBC" },
   { ref:"wildcardRef",   inHeader:false, title:"Wildcard option",
     body:"The wildcard option is a placeholder for free text comments. You can add your comments in the Patient note preview here or after pasting into your EMR.",
     requireCompose:true, expandGroup:"Microalbumin" },
   { ref:"dragHandle",    inHeader:false, title:"Reorder labs",
-    body:"Grip the handle next to any lab name to rearrange the left column to match your workflow. Your preferred order is saved automatically.",
-    requireCompose:true },
+    body:"Grip the ⋮⋮ handle on the left of any lab row to rearrange the column. Your preferred order is saved automatically.",
+    requireCompose:true, showHandleArrow:true },
   { ref:"clinicianTodo", inHeader:false, title:"Clinician to do",
     body:"When your comments include prescriptions, new diagnoses, or follow-up lab orders, they queue up here as reminders so you don't miss them.",
     requireCompose:true },
@@ -257,7 +269,7 @@ const TOUR_STEPS = [
     body:"When your comments include actions for your staff like scheduling a follow-up visit, those queue up here so you can copy and paste that into a note to your staff.",
     requireCompose:true },
   { ref:"notePreview",   inHeader:false, title:"Edit your note",
-    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying. Hover over a bullet to delete it.",
+    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording. Hover over a bullet and click × (in red) to delete it.",
     requireCompose:true },
   { ref:"copyBtn",       inHeader:false, title:"Copy to your EMR",
     body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.",
@@ -711,12 +723,13 @@ export default function App() {
                 const justAdded = recentlyAdded === defaultSnippet?.id;
                 return (
                   <div key={name}
+                    ref={name === "CBC" ? el => tourRefs.current.cbcSection = el : null}
                     draggable
                     onDragStart={e => handleDragStart(e, name)}
                     onDragOver={e => handleDragOver(e, name)}
                     onDragLeave={() => setDragOverGroup(null)}
                     onDrop={e => handleDrop(e, name)}
-                    ref={name === "Iron studies" ? el => tourRefs.current.dragHandle = el : null}
+                    ref={name === "Fe/TIBC/Ferr" ? el => tourRefs.current.dragHandle = el : null}
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div style={{ display:"flex", alignItems:"center" }}>
                       {/* Six-dot grip handle */}
@@ -737,8 +750,8 @@ export default function App() {
                           onMouseEnter={e=>{ if(!justAdded) e.currentTarget.style.color="#2563eb"; }} onMouseLeave={e=>{ if(!justAdded) e.currentTarget.style.color="#1e3a8a"; }}>
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block" }}>
                           {justAdded
-                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{name}</>
-                            : <>+ {name}</>
+                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{GROUP_ABBREV[name] || name}</>
+                            : <>+ {GROUP_ABBREV[name] || name}</>
                           }
                           </span>
                         </button>
@@ -1209,15 +1222,27 @@ export default function App() {
         const hl = rect ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 } : null;
         const ww = window.innerWidth; const wh = window.innerHeight;
 
-        // Smart tooltip positioning: place below target, flip above if near bottom, clamp to viewport
-        const tipW = 300; const tipH = 200;
-        const tipLeft = hl ? Math.max(8, Math.min(hl.left, ww - tipW - 8)) : ww/2 - tipW/2;
-        const belowTop = hl ? hl.top + hl.height + 12 : wh/2;
-        const aboveTop = hl ? hl.top - tipH - 12 : wh/2;
-        const fitsBelow = belowTop + tipH <= wh - 8;
-        const fitsAbove = aboveTop >= 8;
-        const rawTop = fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop);
-        const tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
+        // Smart tooltip positioning
+        const tipW = 300; const tipH = 210;
+        let tipLeft, tipTop;
+
+        if (step.tooltipRight && hl) {
+          // Place tooltip to the right of the spotlight (step 3 - left column)
+          tipLeft = Math.min(hl.left + hl.width + 16, ww - tipW - 8);
+          const rawTop = hl.top;
+          tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
+        } else if (hl) {
+          const belowTop = hl.top + hl.height + 12;
+          const aboveTop = hl.top - tipH - 12;
+          const fitsBelow = belowTop + tipH <= wh - 8;
+          const fitsAbove = aboveTop >= 8;
+          const rawTop = fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop);
+          tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
+          tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+        } else {
+          tipLeft = ww/2 - tipW/2;
+          tipTop = wh/2 - tipH/2;
+        }
 
         const overlayColor = "rgba(0,0,0,0.52)";
         return (
@@ -1235,6 +1260,14 @@ export default function App() {
                   ? "0 0 0 3px rgba(255,255,255,0.9), 0 0 0 5px rgba(255,255,255,0.3)"
                   : "0 0 0 3px #60a5fa, 0 0 0 5px rgba(96,165,250,0.4)",
                 zIndex:400, pointerEvents:"none" }}/>
+              {/* Handle arrow indicator for reorder step */}
+              {step.showHandleArrow && (
+                <div style={{ position:"fixed", left: hl.left + 2, top: hl.top + hl.height/2 - 10,
+                  zIndex:401, pointerEvents:"none", display:"flex", alignItems:"center", gap:3 }}>
+                  <div style={{ background:"#2563eb", color:"white", fontSize:10, fontWeight:700,
+                    padding:"3px 7px", borderRadius:4, whiteSpace:"nowrap" }}>← grip here</div>
+                </div>
+              )}
             </> : (
               <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
             )}
@@ -1275,3 +1308,4 @@ export default function App() {
     </div>
   );
 }
+
