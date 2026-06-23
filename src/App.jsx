@@ -114,7 +114,7 @@ function saveGroupOrder(order) { localStorage.setItem("lab_group_order", JSON.st
 
 function loadSnippets(deletedIds) {
   try {
-    const saved = localStorage.getItem("lab_snippets_v2");
+    const saved = localStorage.getItem("lab_snippets_v3");
     const deleted = deletedIds || loadDeletedIds();
     if (!saved) return DEFAULT_SNIPPETS.filter(s => !deleted.includes(s.id));
     const parsed = JSON.parse(saved);
@@ -131,7 +131,7 @@ function loadSnippets(deletedIds) {
     return [...merged, ...custom];
   } catch { return DEFAULT_SNIPPETS; }
 }
-function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v2", JSON.stringify(snippets)); }
+function saveSnippets(snippets) { localStorage.setItem("lab_snippets_v3", JSON.stringify(snippets)); }
 function loadHeaderFooter() {
   try { const s=localStorage.getItem("lab_headerfooter"); if (!s) return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; return JSON.parse(s); } catch { return {header:DEFAULT_HEADER,footer:DEFAULT_FOOTER}; }
 }
@@ -196,6 +196,7 @@ export default function App() {
   const [matchStatus, setMatchStatus] = useState(null);
   const [copied, setCopied] = useState(false);
   const [staffCopied, setStaffCopied] = useState(false);
+  const [noteEdits, setNoteEdits] = useState({}); // keyed by noteLines index
   const [showNewNoteWarning, setShowNewNoteWarning] = useState(false);
   const [skipNewNoteWarning, setSkipNewNoteWarning] = useState(() => {
     try { return localStorage.getItem("lab_skip_new_note_warning") === "true"; } catch { return false; }
@@ -272,7 +273,7 @@ export default function App() {
   })();
 
   const fullNote = noteLines.length > 0
-    ? `${hf.header}\n\n${noteLines.map(l => `• ${l.text}`).join("\n\n")}\n\n${hf.footer}`
+    ? `${hf.header}\n\n${noteLines.map((l, i) => `• ${noteEdits[i] !== undefined ? noteEdits[i] : l.text}`).join("\n\n")}\n\n${hf.footer}`
     : "";
 
   // ── Speech ────────────────────────────────────────────────────────────────
@@ -333,7 +334,7 @@ export default function App() {
 
   const removeTriggered = (idx) => setTriggered(prev => prev.filter((_, i) => i !== idx));
 
-  const doNewNote = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); setCopied(false); setStaffCopied(false); };
+  const doNewNote = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); setCopied(false); setStaffCopied(false); setNoteEdits({}); };
   const handleNewNote = () => {
     if (triggered.length === 0) { doNewNote(); return; }
     if (skipNewNoteWarning) { doNewNote(); return; }
@@ -623,13 +624,44 @@ export default function App() {
                 ? <div style={{ color:"#d1d5db", fontSize:13, fontStyle:"italic", textAlign:"center", padding:"2rem 0" }}>Your note will appear here as you add triggers</div>
                 : <div style={{ fontSize:13, lineHeight:1.75, color:"#1f2937" }}>
                     <div style={{ color:"#374151", marginBottom:"1rem", fontStyle:"italic", borderLeft:"3px solid #bfdbfe", paddingLeft:12, fontSize:12 }}>{hf.header}</div>
-                    {noteLines.map((line, i) => (
-                      <div key={i} style={{ display:"flex", gap:8, marginBottom:"0.7rem" }}>
-                        <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0 }}>•</span>
-                        <span>{line.text}</span>
-                      </div>
-                    ))}
+                    {noteLines.map((line, i) => {
+                      const currentText = noteEdits[i] !== undefined ? noteEdits[i] : line.text;
+                      const isEdited = noteEdits[i] !== undefined && noteEdits[i] !== line.text;
+                      return (
+                        <div key={i} style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start" }}>
+                          <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:4 }}>•</span>
+                          <div style={{ flex:1, position:"relative" }}>
+                            <textarea
+                              value={currentText}
+                              onChange={e => setNoteEdits(prev => ({ ...prev, [i]: e.target.value }))}
+                              style={{
+                                width:"100%", fontSize:13, lineHeight:1.6, color:"#1f2937",
+                                border: isEdited ? "1px solid #bfdbfe" : "1px solid transparent",
+                                borderRadius:6, padding:"3px 6px", resize:"none", fontFamily:"inherit",
+                                background: isEdited ? "#f0f9ff" : "transparent",
+                                cursor:"text", overflow:"hidden", boxSizing:"border-box",
+                                minHeight:24,
+                              }}
+                              rows={Math.max(1, Math.ceil(currentText.length / 72))}
+                              onFocus={e => { e.target.style.border="1px solid #93c5fd"; e.target.style.background="#f0f9ff"; }}
+                              onBlur={e => {
+                                e.target.style.border = isEdited ? "1px solid #bfdbfe" : "1px solid transparent";
+                                e.target.style.background = isEdited ? "#f0f9ff" : "transparent";
+                              }}
+                            />
+                            {isEdited && (
+                              <button onClick={() => setNoteEdits(prev => { const n={...prev}; delete n[i]; return n; })}
+                                title="Revert to original"
+                                style={{ position:"absolute", top:2, right:2, background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:13, lineHeight:1, padding:0 }}>↺</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                     <div style={{ color:"#374151", marginTop:"1rem", fontStyle:"italic", borderLeft:"3px solid #bfdbfe", paddingLeft:12, fontSize:12 }}>{hf.footer}</div>
+                    {Object.keys(noteEdits).length > 0 && (
+                      <div style={{ marginTop:8, fontSize:11, color:"#6366f1" }}>✎ Note has been manually edited — edits are temporary and will clear with New Note</div>
+                    )}
                   </div>
               }
             </div>
