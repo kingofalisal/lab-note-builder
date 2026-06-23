@@ -28,7 +28,74 @@ const GROUP_DEFAULT_ID = {
 };
 
 const DEFAULT_SNIPPETS = [
-  { id:"tsh_low_on_meds", group:"TSH", trigger:"TSH low on meds", text:"Your TSH is low, which suggests your thyroid dose is too high. I'll send a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_low_on_meds", group:"TSH", trigger:"TSH low on meds", synonyms:["thyroid low on medication","TSH too low on thyroid meds","thyroid dose too high"], text:"Your TSH is low, which suggests your thyroid dose is too high. I'll send a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_low_not_on_meds", group:"TSH", trigger:"TSH low (not on meds)", synonyms:["thyroid low not on medication","TSH low no thyroid meds","overactive thyroid"], text:"Your TSH (thyroid) is low, which suggests you may have an overactive thyroid gland. This can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_normal_on_meds", group:"TSH", trigger:"TSH normal on meds", synonyms:["thyroid normal on medication","TSH fine on thyroid meds","thyroid controlled"], text:"Your thyroid level (TSH) looks great. Your medication is working well and keeping your thyroid in the normal range. Keep taking it as prescribed.", clinicianActions:[], staffActions:[] },
+  { id:"tsh_normal_not_on_meds", group:"TSH", trigger:"TSH normal (not on meds)", synonyms:["thyroid normal no medication","TSH normal no meds"], text:"Your thyroid level (TSH) is normal.", clinicianActions:[], staffActions:[] },
+  { id:"tsh_high_on_meds", group:"TSH", trigger:"TSH high on meds", synonyms:["thyroid high on medication","TSH too high on thyroid meds","thyroid dose too low"], text:"Your TSH is higher than it should be, which suggests you may need a higher dose of your thyroid medication if you've been taking it as prescribed. I'll send a prescription to your pharmacy with a slightly higher dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send higher-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_high_not_on_meds", group:"TSH", trigger:"TSH high (not on meds)", synonyms:["thyroid high no medication","underactive thyroid","hypothyroid not on meds"], text:"Your TSH is high, which indicates your thyroid level is lower than normal. This can sometimes cause symptoms like fatigue, feeling cold, or weight gain. If you are feeling fine, we can just recheck in a year. If you are troubled by any of those symptoms, let me know and we can start a low dose of thyroid medication to see if it helps.", clinicianActions:[], staffActions:[] },
+  { id:"cbc_normal", group:"CBC", trigger:"CBC normal", synonyms:["blood count normal","CBC fine","blood counts normal"], text:"Your blood counts (CBC) are normal. This includes red blood cells (anemia), white blood cells (infection), and platelets (blood clotting).", clinicianActions:[], staffActions:[] },
+  { id:"mild_anemia", group:"CBC", trigger:"Mild anemia needs labs", synonyms:["anemia needs workup","mild anemia follow up","low blood count needs labs"], text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2–3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", clinicianActions:["Order anemia workup labs","Add anemia to problem list"], staffActions:["Schedule follow-up visit with me within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"bmp_normal", group:"BMP", trigger:"BMP normal", synonyms:["electrolytes normal","kidney function normal","basic metabolic panel normal"], text:"Your electrolytes and kidney function are normal.", clinicianActions:[], staffActions:[] },
+  { id:"lfts_normal", group:"LFTs", trigger:"LFTs normal", synonyms:["liver tests normal","liver function normal","liver enzymes normal"], text:"Your liver tests are normal.", clinicianActions:[], staffActions:[] },
+  { id:"transaminitis_new", group:"LFTs", trigger:"Transaminitis new", synonyms:["new elevated liver enzymes","liver enzymes high first time","new transaminitis"], text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause. Possible causes include alcohol use, herbal medications or supplements, or fat accumulation in the liver. I've ordered repeat blood tests that I'd like you to complete in about a month.", clinicianActions:["Order repeat LFTs + liver workup in ~1 month","Add transaminitis (elevated liver enzymes) to problem list"], staffActions:[] },
+  { id:"transaminitis_still", group:"LFTs", trigger:"Transaminitis still", synonyms:["liver enzymes still elevated","ongoing transaminitis","liver enzymes still high"], text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). You can help treat this by avoiding alcohol and herbal supplements, which can further irritate the liver, and by working toward weight loss. We should recheck blood tests every 6 months to monitor this condition.", clinicianActions:["Order repeat LFTs in 6 months"], staffActions:[] },
+  { id:"a1c_normal", group:"A1c", trigger:"A1c normal (no prior diagnosis of DM or preDM)", synonyms:["A1c normal no diabetes","hemoglobin A1c normal","blood sugar normal"], text:"Your A1c is in the normal range, which means your average blood sugar over the past 3 months has been healthy. Keep up the good work with your diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
+  { id:"a1c_normal_prediabetes", group:"A1c", trigger:"A1c normal in prediabetes", synonyms:["A1c back to normal prediabetes resolved","prediabetes resolved","blood sugar normalized"], text:"Your A1c is now in the normal range, which means your prediabetes is well controlled. Continue to avoid excess sweets and simple carbohydrates (bread, rice, pasta, potatoes). We should recheck your A1c in one year.", clinicianActions:[], staffActions:[] },
+  { id:"still_prediabetes", group:"A1c", trigger:"Still prediabetes", synonyms:["prediabetes unchanged","A1c still in prediabetes range","borderline diabetes still"], text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:[], staffActions:[] },
+  { id:"new_prediabetes", group:"A1c", trigger:"New prediabetes", synonyms:["new borderline diabetes","A1c in prediabetes range first time","new pre-diabetes"], text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet, lifestyle changes, and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:["Add prediabetes to problem list"], staffActions:[] },
+  { id:"diabetes_controlled_6mo", group:"A1c", trigger:"Diabetes controlled – 6 mo recheck", synonyms:["diabetes well controlled 6 months","A1c at goal 6 month recheck","diabetes stable 6 months"], text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 6 months.", clinicianActions:["Order A1c in 6 months"], staffActions:[] },
+  { id:"diabetes_controlled_3mo", group:"A1c", trigger:"Diabetes controlled – 3 mo recheck", synonyms:["diabetes well controlled 3 months","A1c at goal 3 month recheck","diabetes stable 3 months"], text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 3 months.", clinicianActions:["Order A1c in 3 months"], staffActions:[] },
+  { id:"diabetes_not_controlled", group:"A1c", trigger:"Diabetes not controlled", synonyms:["A1c too high","diabetes out of control","blood sugar not controlled","diabetes poorly controlled"], text:"Your A1c (diabetes) is higher than we would like, which tells us your blood sugar has been running too high over the past 3 months. We need to work together to improve this and lower your risk of diabetes complications. Please schedule a visit with me in the coming weeks so we can review and adjust your treatment plan.", clinicianActions:[], staffActions:["Schedule visit with me in the next few weeks (video or in-office)."] },
+  { id:"new_diabetes", group:"A1c", trigger:"New diagnosis of diabetes", synonyms:["new diabetes diagnosis","A1c in diabetes range first time","new type 2 diabetes"], text:"Your A1c result shows that your blood sugar is now in the diabetes range. We can work together to get your blood sugar back to normal and prevent complications through a combination of diet changes, exercise, and medication. Please schedule a visit with me in the coming weeks (video or in-office) so we can talk through this diagnosis and come up with a plan that works for you.", clinicianActions:["Add type 2 diabetes to problem list"], staffActions:["Schedule new diabetes visit with me in the next few weeks (video or in-office)."] },
+  { id:"microalbumin_normal", group:"Microalbumin", trigger:"Microalbumin normal", synonyms:["urine protein normal","microalbumin creatinine ratio normal","kidney protein normal"], text:"Your urine test for protein (microalbumin/creatinine ratio) is normal, which tells us your kidneys are not leaking protein.", clinicianActions:[], staffActions:[] },
+  { id:"microalbumin_elevated_new", group:"Microalbumin", trigger:"Microalbumin elevated new", synonyms:["new urine protein","microalbumin high first time","new kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) shows some protein leaking from your kidneys, which can be an early warning sign that the kidneys are under stress. This can be caused by high blood pressure, diabetes, or other conditions. I've ordered a repeat test to confirm this finding, which I'd like you to complete at your lab in about 1 month.", clinicianActions:["Order repeat microalbumin/creatinine ratio in 1 month"], staffActions:[] },
+  { id:"microalbumin_elevated_still", group:"Microalbumin", trigger:"Microalbumin elevated still", synonyms:["urine protein still elevated","microalbumin still high","ongoing kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) continues to show some protein in your urine. We will continue to monitor this closely and focus on controlling blood pressure and blood sugar to protect your kidney health. We will recheck in 6 months.", clinicianActions:["Order microalbumin/creatinine ratio in 6 months"], staffActions:[] },
+  { id:"vitd_normal", group:"Vitamin D", trigger:"Vitamin D normal", synonyms:["vitamin D level normal","D level fine","vitamin D okay"], text:"Your vitamin D level is in the normal range. Continue your current supplement if you are taking one.", clinicianActions:[], staffActions:[] },
+  { id:"vitd_low", group:"Vitamin D", trigger:"Vitamin D low", synonyms:["vitamin D deficient","low vitamin D","D level low"], text:"Your vitamin D level is lower than normal. I recommend starting a vitamin D supplement. You can purchase this over the counter — a dose of 2,000 IU daily is a reasonable starting point for most adults. We will recheck your level in 3–4 months.", clinicianActions:["Order vitamin D recheck in 3–4 months"], staffActions:[] },
+  { id:"vitd_very_low", group:"Vitamin D", trigger:"Vitamin D very low", synonyms:["severely low vitamin D","vitamin D very deficient","critically low D level"], text:"Your vitamin D level is significantly low and will need a higher dose to correct. I am sending in a prescription for a higher-dose vitamin D supplement. Please take it once weekly for 8 weeks as directed. We should recheck your level in about 3 months to see if it is improving.", clinicianActions:["Prescribe high-dose vitamin D (e.g. ergocalciferol 50,000 IU weekly x8 weeks)","Order vitamin D recheck in 3–4 months"], staffActions:[] },
+  { id:"vitd_on_supplement", group:"Vitamin D", trigger:"Vitamin D on supplement", synonyms:["vitamin D good on supplement","D level okay on supplement","vitamin D maintained"], text:"Your vitamin D level looks good on your current supplement — keep taking it.", clinicianActions:[], staffActions:[] },
+  { id:"lipids_normal", group:"Lipids", trigger:"Lipids normal", synonyms:["cholesterol normal","lipid panel normal","cholesterol fine"], text:"Your cholesterol and lipid levels all look healthy. Continue your current diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
+  { id:"ldl_at_goal_on_statin", group:"Lipids", trigger:"LDL at goal on statin", synonyms:["LDL controlled on statin","cholesterol at goal on medication","statin working well"], text:"Your LDL cholesterol is at goal on your statin medication — great news! Keep taking your medication as prescribed. We will recheck your lipid panel in one year.", clinicianActions:["Order lipid panel in 1 year"], staffActions:[] },
+  { id:"ldl_elevated_no_meds", group:"Lipids", trigger:"LDL elevated no meds needed", synonyms:["LDL high lifestyle only","cholesterol high no medication yet","high LDL diet and exercise"], text:"Your LDL (bad cholesterol) is higher than recommended. For most people, the best first step is to reduce saturated fat in your diet, increase fiber, and get regular aerobic exercise. Depending on your overall heart risk, medication may also be appropriate. Let's discuss this at your next visit. If you'd like to discuss sooner, please schedule a visit.", clinicianActions:[], staffActions:[] },
+  { id:"ldl_high_despite_statin", group:"Lipids", trigger:"LDL too high despite statin", synonyms:["LDL still high on statin","cholesterol not controlled on medication","statin not working"], text:"Your LDL cholesterol is still above our target despite your statin medication. This may mean the dose needs to be adjusted or that we consider adding another medication. I'd like to discuss your options — please schedule a visit or send me a message.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video OK)."] },
+  { id:"ldl_high_needs_statin", group:"Lipids", trigger:"LDL too high – needs statin", synonyms:["LDL high start statin","high cholesterol needs medication","starting statin therapy"], text:"Your LDL (bad cholesterol) is too high, and given your overall cardiovascular risk, I recommend starting a statin medication once daily. I've sent this to your pharmacy. Please take it daily as prescribed. If you'd like to discuss further before starting, please schedule an in-office or video visit in the next 1–2 months. Once you start the medication, let's repeat your lipid panel at least 2 months later to see how it's working.", clinicianActions:["Prescribe statin","Order lipid panel in 2+ months after starting statin"], staffActions:[] },
+  { id:"triglycerides_high", group:"Lipids", trigger:"Triglycerides too high", synonyms:["triglycerides elevated","high triglycerides","blood fats too high"], text:"Your triglycerides (blood fats) are higher than normal. This is common with non-fasting blood tests and in that case can be disregarded. If you did this test fasting, you can lower your triglycerides by reducing alcohol intake, cutting back on sugar and refined carbohydrates, and getting regular exercise. Weight loss also helps significantly. We will recheck this at your next lab visit.", clinicianActions:[], staffActions:[] },
+  { id:"hdl_too_low", group:"Lipids", trigger:"HDL too low", synonyms:["good cholesterol low","HDL low","low HDL"], text:"Your HDL (good cholesterol) is lower than normal. Higher HDL levels are associated with a lower risk of heart attack. Some ways to raise your HDL include: regular aerobic exercise, replacing trans fats with unsaturated fats, quitting smoking if you smoke, and losing excess weight. We should recheck this in 1 year, or sooner if you make changes and want to see the effect on your HDL.", clinicianActions:[], staffActions:[] },
+  { id:"lpa_normal", group:"Lipoprotein(a)", trigger:"Lp(a) normal", synonyms:["lipoprotein a normal","Lp(a) fine","lipoprotein little a normal"], text:"Your lipoprotein(a) is in the normal range, indicating no increased cardiovascular risk from this marker. This test is recommended once for most adults and does not need to be repeated.", clinicianActions:[], staffActions:[] },
+  { id:"lpa_elevated", group:"Lipoprotein(a)", trigger:"Lp(a) elevated", synonyms:["lipoprotein a high","Lp(a) elevated","high lipoprotein little a"], text:"Your lipoprotein(a) level is elevated. Lipoprotein(a) is a type of cholesterol particle that is largely determined by genetics and can increase the risk of heart attack and stroke. Unlike LDL cholesterol, it does not respond well to diet or standard medications. While we cannot easily lower your Lp(a) directly, we can make sure all your other cardiovascular risk factors are well controlled. We can discuss this further at your next visit, or sooner if you'd like to schedule a visit.", clinicianActions:[], staffActions:[] },
+  { id:"sti_negative", group:"STI", trigger:"STI screen negative", synonyms:["STI negative","sexually transmitted infection screen negative","STD screen negative"], text:"Your STI screening results are all negative. This includes urine tests for chlamydia and gonorrhea and blood tests for syphilis and HIV.", clinicianActions:[], staffActions:[] },
+  { id:"hcv_negative", group:"HCV", trigger:"HCV negative", synonyms:["hepatitis C negative","hep C negative","hepatitis C antibody negative"], text:"Your hepatitis C antibody test is negative, meaning no hepatitis C infection has been detected. We test all adults once and more frequently if you are at ongoing risk for the disease.", clinicianActions:[], staffActions:[] },
+  { id:"hbv_immune", group:"HBV", trigger:"HBsAg neg and HBV immune", synonyms:["hepatitis B immune","hep B immune","immune to hepatitis B"], text:"Your hepatitis B tests show that you are immune to hepatitis B and do not have an active hepatitis B infection.", clinicianActions:[], staffActions:[] },
+  { id:"hbv_not_immune", group:"HBV", trigger:"HBsAg neg but NOT HBV immune", synonyms:["hepatitis B not immune needs vaccine","hep B needs vaccine","not immune to hepatitis B"], text:"Your hepatitis B test shows that you do not have hepatitis B infection but are not immune. We should start your hepatitis B vaccination series to give you lifelong immunity and protection.", clinicianActions:["Order/administer hepatitis B vaccine series"], staffActions:[] },
+  { id:"b12_normal", group:"Vitamin B12", trigger:"B12 normal", synonyms:["vitamin B12 normal","B12 fine","cobalamin normal"], text:"Your vitamin B12 level is in the normal range. If you are taking a supplement, continue it. Otherwise, no need to start taking extra B12.", clinicianActions:[], staffActions:[] },
+  { id:"b12_borderline", group:"Vitamin B12", trigger:"B12 borderline (200–400)", synonyms:["B12 borderline low","vitamin B12 borderline","B12 low normal"], text:"Your vitamin B12 level is in the borderline range. I'd like you to start taking a vitamin B12 supplement — 1,000 mcg daily by mouth. We can recheck your B12 level next time we do blood tests.", clinicianActions:[], staffActions:[] },
+  { id:"b12_low", group:"Vitamin B12", trigger:"B12 low", synonyms:["vitamin B12 deficient","low B12","B12 deficiency"], text:"Your vitamin B12 level is lower than normal. B12 is important for nerve function and red blood cell production. Low levels can sometimes cause fatigue, tingling, or memory issues. I recommend starting a B12 supplement — 1,000 mcg daily by mouth is a good dose for most adults. We will recheck in 3 months.", clinicianActions:["Order B12 recheck in 3 months"], staffActions:[] },
+  { id:"psa_normal_screening", group:"PSA", trigger:"PSA screening – normal", synonyms:["PSA normal","prostate cancer screening normal","PSA fine"], text:"Your PSA test for prostate cancer screening is normal. If you'd like to continue screening, we should repeat the test in 1–4 years depending on your PSA level and risk factors.", clinicianActions:[], staffActions:[] },
+  { id:"psa_mildly_elevated", group:"PSA", trigger:"PSA screening – mildly elevated", synonyms:["PSA mildly high","slightly elevated PSA","PSA borderline"], text:"Your PSA test for prostate cancer screening is mildly elevated. This does NOT mean you have prostate cancer, but we do need to recheck your level in about a month to see if it remains high. If it is still elevated, I'll refer you to a urologist to discuss whether you need additional testing.", clinicianActions:["Order PSA recheck in 1 month"], staffActions:[] },
+  { id:"psa_quite_elevated", group:"PSA", trigger:"PSA screening – quite elevated", synonyms:["PSA significantly high","PSA very elevated","high PSA needs urology"], text:"Your PSA test for prostate cancer screening is high and requires further evaluation. I am referring you to a urologist to discuss the best next steps. Please expect to hear about your referral within 1 week. Contact our office if you do not.", clinicianActions:["Refer to urology for elevated PSA"], staffActions:["Ensure urology referral is sent and patient is contacted within 1 week."] },
+  { id:"psa_normal_prior_ca", group:"PSA", trigger:"PSA normal – prior prostate cancer", synonyms:["PSA undetectable prior prostate cancer","PSA okay history of prostate cancer"], text:"Your PSA level is low or undetectable, which is reassuring and does not show signs of recurrence of your prostate cancer. We should repeat this test in one year.", clinicianActions:[], staffActions:[] },
+  { id:"psa_elevated_prior_ca", group:"PSA", trigger:"PSA elevated – prior prostate cancer", synonyms:["PSA rising prior prostate cancer","PSA up history of prostate cancer"], text:"Your PSA level is elevated. I'd like you to schedule a follow-up with your urologist to discuss the best next steps. If you don't have a current urologist, let me know and I can send a referral.", clinicianActions:["Refer to urology for elevated PSA — prior prostate cancer history"], staffActions:["Assist patient with urology referral or contact existing urologist's office."] },
+  { id:"iron_normal", group:"Iron studies", trigger:"Iron studies normal", synonyms:["iron normal","ferritin normal","iron panel normal"], text:"Your iron tests (iron, total iron binding capacity, and ferritin) are all within the normal range.", clinicianActions:[], staffActions:[] },
+  { id:"iron_deficiency_no_anemia_women", group:"Iron studies", trigger:"Iron deficiency – no anemia, menstruating women", synonyms:["iron low no anemia women","iron deficiency without anemia female","low iron stores menstruating women"], text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in 6 months. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_women", group:"Iron studies", trigger:"Iron deficiency anemia – menstruating women", synonyms:["iron deficiency anemia women","anemia from low iron female","iron deficiency anemia menstruating"], text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in 6 months. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency anemia to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_men", group:"Iron studies", trigger:"Iron deficiency anemia – men", synonyms:["iron deficiency anemia men","anemia from low iron male","iron deficiency anemia male"], text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:["Add iron deficiency anemia to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"iron_deficiency_no_anemia_men", group:"Iron studies", trigger:"Iron deficiency without anemia – men", synonyms:["iron low no anemia men","iron deficiency without anemia male","low iron stores men"], text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:["Add iron deficiency to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"ferritin_elevated", group:"Iron studies", trigger:"Ferritin elevated", synonyms:["high ferritin","ferritin too high","elevated ferritin level"], text:"Your ferritin level is higher than normal. Ferritin is a protein that stores iron, but it is also an inflammatory marker — it can be elevated with infection, inflammation, liver disease, or excess iron. At this level, no treatment is required. We can repeat this test with your next regularly planned blood tests.", clinicianActions:[], staffActions:[] },
+  { id:"testosterone_normal", group:"Testosterone", trigger:"Testosterone normal", synonyms:["testosterone level normal","testosterone fine","T level normal"], text:"Your testosterone level is within the normal range.", clinicianActions:[], staffActions:[] },
+  { id:"testosterone_low_first", group:"Testosterone", trigger:"Testosterone low (1st time)", synonyms:["testosterone low first time","low T first time","testosterone low initial"], text:"Your testosterone level is lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. We need to repeat this test at least once, at least 1 month after the last test. I've sent the order to your preferred lab. Testing before 10 AM gives the most reliable results. If the level is low a second time, we'll discuss treatment options.", clinicianActions:["Order repeat testosterone level (morning). Consider adding FSH, LH if not already done."], staffActions:[] },
+  { id:"testosterone_low_confirmed", group:"Testosterone", trigger:"Testosterone low (at least twice)", synonyms:["low testosterone confirmed","testosterone low confirmed twice","low T confirmed"], text:"Your testosterone level has again come back lower than normal. Low testosterone can cause fatigue, low sex drive, difficulty concentrating, and mood changes. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss the findings and consider treatment options.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
+  { id:"uric_acid_normal", group:"Uric acid", trigger:"Uric acid normal – not on meds for gout", synonyms:["uric acid normal","gout marker normal","uric acid fine"], text:"Your uric acid level is normal.", clinicianActions:[], staffActions:[] },
+  { id:"uric_acid_elevated_no_sx", group:"Uric acid", trigger:"Uric acid elevated – no symptoms", synonyms:["uric acid high no symptoms","elevated uric acid asymptomatic","high uric acid no gout"], text:"Your uric acid level is higher than normal. Elevated uric acid does not always cause symptoms, but over time it can lead to gout (painful joint flares) or kidney stones. Reducing foods high in purines — such as red meat, organ meats, shellfish, and beer in particular — can help lower your level.", clinicianActions:[], staffActions:[] },
+  { id:"uric_acid_high_recurrent_gout", group:"Uric acid", trigger:"Uric acid > 6 with recurrent gout – not yet on ppx", synonyms:["uric acid high recurrent gout","gout not on prophylaxis","high uric acid gout not treated"], text:"Your uric acid level is too high and is likely contributing to your recurrent gout attacks. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss starting medication to lower your uric acid and reduce your gout attacks.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
+  { id:"uric_acid_high_on_meds", group:"Uric acid", trigger:"Uric acid > 6 despite allopurinol or febuxostat", synonyms:["uric acid high on medication","gout not controlled on allopurinol","uric acid elevated on treatment"], text:"Your uric acid level is not in our target range despite your current medication. We need to adjust your treatment to get it lower. I've asked my staff to schedule a visit (video or in-office) in the next several weeks so we can discuss further.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video or in-office)."] },
+  { id:"ua_normal", group:"Urinalysis", trigger:"Urinalysis normal", synonyms:["urine test normal","urinalysis fine","UA normal"], text:"Your urine test is normal.", clinicianActions:[], staffActions:[] },
+  { id:"ua_blood_new", group:"Urinalysis", trigger:"Blood in urine new", synonyms:["new blood in urine","hematuria new","new hematuria"], text:"Your urine test shows blood, which needs further evaluation. Blood in the urine can have many causes, most of which are not serious, but it is important to investigate. I've ordered some repeat lab tests for you to complete prior to a follow-up visit. I've asked my staff to schedule a visit with me in the next few weeks to discuss further.", clinicianActions:["Order repeat UA and additional hematuria workup labs"], staffActions:["Schedule visit with me within 4 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"ua_protein", group:"Urinalysis", trigger:"Protein in urine", synonyms:["proteinuria","protein in urine","urine protein elevated"], text:"Your urine test shows protein, which can be an early sign of kidney stress. I've ordered some repeat lab tests for you to complete in about 4 weeks. I've asked my staff to schedule a visit with me to review results and discuss further.", clinicianActions:["Order repeat UA and microalbumin/creatinine ratio in ~4 weeks"], staffActions:["Schedule visit with me within 4–6 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"ucx_negative", group:"Urine Culture", trigger:"Urine culture negative", synonyms:["urine culture negative","no bacteria in urine","urine culture clear"], text:"Your urine culture is negative, meaning no bacteria were found. If you have any ongoing urinary symptoms, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
+  { id:"ucx_positive_correct_abx", group:"Urine Culture", trigger:"Urine culture positive – on correct antibiotic", synonyms:["urine culture positive correct antibiotic","UTI on right antibiotic","urine culture positive treated correctly"], text:"Your urine culture shows an infection that should be well treated by the antibiotic you were given. Your symptoms should improve within the next 2–3 days. If your symptoms are not improving or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
+  { id:"ucx_positive_new_abx", group:"Urine Culture", trigger:"Urine culture positive – needs new antibiotic", synonyms:["urine culture positive needs different antibiotic","UTI wrong antibiotic","urine culture resistant needs new treatment"], text:"Your urine culture shows an infection. I am sending in an antibiotic that should treat this infection well. Please start taking it as soon as possible and complete the full course as directed. Your symptoms should improve within 2–3 days of starting. If they do not improve or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:["Prescribe targeted antibiotic per culture sensitivities"], staffActions:[] },
+];
   { id:"tsh_low_not_on_meds", group:"TSH", trigger:"TSH low (not on meds)", text:"Your TSH (thyroid) is low, which suggests you may have an overactive thyroid gland. This can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
   { id:"tsh_normal_on_meds", group:"TSH", trigger:"TSH normal on meds", text:"Your thyroid level (TSH) looks great. Your medication is working well and keeping your thyroid in the normal range. Keep taking it as prescribed.", clinicianActions:[], staffActions:[] },
   { id:"tsh_normal_not_on_meds", group:"TSH", trigger:"TSH normal (not on meds)", text:"Your thyroid level (TSH) is normal.", clinicianActions:[], staffActions:[] },
@@ -125,7 +192,8 @@ function loadSnippets(deletedIds) {
         if (!ov) return def;
         return { ...def, text: ov.text,
           clinicianActions: ov.clinicianActions ?? (ov.actions ?? def.clinicianActions),
-          staffActions: ov.staffActions ?? def.staffActions };
+          staffActions: ov.staffActions ?? def.staffActions,
+          synonyms: ov.synonyms ?? def.synonyms ?? [] };
       });
     const custom = parsed.filter(s => s.custom);
     return [...merged, ...custom];
@@ -153,7 +221,40 @@ function isCustomized(snippet) {
   if (!def) return false;
   return def.text !== snippet.text ||
     JSON.stringify(def.clinicianActions) !== JSON.stringify(snippet.clinicianActions) ||
-    JSON.stringify(def.staffActions) !== JSON.stringify(snippet.staffActions);
+    JSON.stringify(def.staffActions) !== JSON.stringify(snippet.staffActions) ||
+    JSON.stringify(def.synonyms || []) !== JSON.stringify(snippet.synonyms || []);
+}
+
+// ── Staff action deduplication ────────────────────────────────────────────────
+function dedupeStaffActions(actions) {
+  if (actions.length <= 1) return actions;
+  // Extract "schedule visit" type actions and dedupe by timeframe
+  const scheduleActions = actions.filter(a => /schedule.*(visit|appt|appointment)/i.test(a));
+  const otherActions = actions.filter(a => !/schedule.*(visit|appt|appointment)/i.test(a));
+
+  if (scheduleActions.length <= 1) return actions;
+
+  // Parse timeframe in weeks from action text
+  const parseWeeks = (s) => {
+    const m = s.match(/(\d+)[\s–-]*(\d+)?\s*weeks?/i);
+    if (m) return m[2] ? parseInt(m[2]) : parseInt(m[1]);
+    const mo = s.match(/(\d+)[\s–-]*(\d+)?\s*months?/i);
+    if (mo) return (mo[2] ? parseInt(mo[2]) : parseInt(mo[1])) * 4;
+    return 99;
+  };
+
+  // Use the longest timeframe (least urgent wins when overlapping)
+  const maxWeeks = Math.max(...scheduleActions.map(parseWeeks));
+  const representative = scheduleActions.reduce((best, a) => parseWeeks(a) === maxWeeks ? a : best, scheduleActions[0]);
+
+  // Check if lab reminder is needed in any
+  const needsLabReminder = scheduleActions.some(a => /labs?.*(3 days|prior|before)/i.test(a));
+  let combined = representative;
+  if (needsLabReminder && !/labs?.*(3 days|prior|before)/i.test(combined)) {
+    combined = combined.replace(/\.$/, '') + '. Remind patient to complete labs at least 3 days before appointment.';
+  }
+
+  return [combined, ...otherActions];
 }
 
 // ── Group helpers ─────────────────────────────────────────────────────────────
@@ -195,17 +296,39 @@ function getConflicts(triggeredIds, snippets) {
 }
 
 // ── Tour steps ────────────────────────────────────────────────────────────────
+// addSnippetId: snippet to add to note when entering this step
+// removeSnippetId: snippet added at this step (to remove when going back)
 const TOUR_STEPS = [
-  { ref:"tourBtn",        inHeader:true,  title:"Welcome to Lab Results Note Builder", body:"Assemble your lab results note by dictating trigger phrases or clicking the buttons. This quick tour shows you how everything works.", requireCompose:false },
-  { ref:"micBtn",         inHeader:false, title:"Add with voice", body:'Click the microphone button and speak phrases like "TSH normal" or "CBC normal". The app listens continuously — just keep speaking. Click stop when done.', requireCompose:true, animate:"voice" },
-  { ref:"leftCol",        inHeader:false, title:"Add by clicking", body:"Click any lab name to instantly add its normal result to your note. You'll get a checkmark confirmation when it's added.", requireCompose:true, animate:"click" },
-  { ref:"expandArrow",    inHeader:false, title:"Expand for abnormals", body:"Click the ▼ arrow next to any lab to see options for abnormal results or results on medication. Try expanding A1c to see diabetes-related comments.", requireCompose:true, animate:"expand" },
-  { ref:"dragHandle",     inHeader:false, title:"Reorder labs", body:"Drag the grip handle to reorder labs in the left column to match your workflow. Your order is saved automatically.", requireCompose:true, animate:"drag" },
-  { ref:"clinicianTodo",  inHeader:false, title:"Clinician to do", body:"When your comments include lab orders or prescriptions, they queue up here as checkboxes so you don't miss them.", requireCompose:true },
-  { ref:"staffTodo",      inHeader:false, title:"Staff to do", body:"Scheduling tasks for your staff populate here automatically. Use the Copy button to paste them directly into a staff message.", requireCompose:true },
-  { ref:"notePreview",    inHeader:false, title:"Edit your note", body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying.", requireCompose:true },
-  { ref:"copyBtn",        inHeader:false, title:"Copy to your EMR", body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.", requireCompose:true },
-  { ref:"manageBtn",      inHeader:true,  title:"Manage snippets", body:"Click Manage Snippets to edit any response, add your own labs and triggers, delete defaults you don't need, or import/export your customizations.", requireCompose:false },
+  { ref:"tourBtn",       inHeader:true,  title:"Welcome to Lab Results Note Builder",
+    body:"Assemble your lab results note by dictating trigger phrases or clicking the buttons. This quick tour shows you how everything works.",
+    requireCompose:false },
+  { ref:"micBtn",        inHeader:false, title:"Add with voice",
+    body:'Click the microphone button and speak phrases like "TSH normal" or "CBC normal". The app listens continuously — just keep speaking. Click stop when done.',
+    requireCompose:true, addSnippetId:"tsh_normal_not_on_meds" },
+  { ref:"leftCol",       inHeader:false, title:"Add by clicking",
+    body:"Click any lab name to instantly add its normal result to your note. You'll see a checkmark confirmation when it's added.",
+    requireCompose:true, addSnippetId:"bmp_normal" },
+  { ref:"expandArrow",   inHeader:false, title:"Expand for abnormals",
+    body:"Click the ▼ arrow to see options for abnormal results. Here we've added 'Mild anemia needs labs' — notice how both the Clinician To Do and Staff To Do panels populate automatically.",
+    requireCompose:true, addSnippetId:"mild_anemia", expandGroup:"CBC" },
+  { ref:"dragHandle",    inHeader:false, title:"Reorder labs",
+    body:"Grip the handle to rearrange labs in the left column to match your workflow. Your preferred order is saved automatically.",
+    requireCompose:true },
+  { ref:"clinicianTodo", inHeader:false, title:"Clinician to do",
+    body:"When your comments include prescriptions, new diagnoses, or follow-up lab orders, they queue up here as reminders so you don't miss them.",
+    requireCompose:true },
+  { ref:"staffTodo",     inHeader:false, title:"Staff to do",
+    body:"When your comments include actions for your staff like scheduling a follow-up visit, those queue up here so you can copy and paste that into a note to your staff.",
+    requireCompose:true },
+  { ref:"notePreview",   inHeader:false, title:"Edit your note",
+    body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying.",
+    requireCompose:true },
+  { ref:"copyBtn",       inHeader:false, title:"Copy to your EMR",
+    body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.",
+    requireCompose:true },
+  { ref:"manageBtn",     inHeader:true,  title:"Manage snippets",
+    body:"Click Manage Snippets to edit any response, add your own labs and triggers, delete defaults you don't need, or import/export your customizations.",
+    requireCompose:false },
 ];
 
 // ── Main Component ─────────────────────────────────────────────────────────────
@@ -224,6 +347,8 @@ export default function App() {
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [tourTriggered, setTourTriggered] = useState([]); // snippets added during tour
+  const [tourExpandedGroup, setTourExpandedGroup] = useState(null);
   const [showTourPrompt, setShowTourPrompt] = useState(() => {
     try { return !localStorage.getItem("lab_tour_prompted"); } catch { return false; }
   });
@@ -240,6 +365,7 @@ export default function App() {
   const [editText, setEditText] = useState("");
   const [editActions, setEditActions] = useState("");
   const [editStaffActions, setEditStaffActions] = useState("");
+  const [editSynonyms, setEditSynonyms] = useState("");
   const [editHf, setEditHf] = useState(null);
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [newTrigger, setNewTrigger] = useState({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
@@ -266,14 +392,15 @@ export default function App() {
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const allClinicianActions = [];
-  const allStaffActions = [];
+  const rawStaffActions = [];
   triggered.forEach(id => {
     const s = snippets.find(sn => sn.id === id);
     if (s) {
       (s.clinicianActions || s.actions || []).forEach(a => { if (!allClinicianActions.includes(a)) allClinicianActions.push(a); });
-      (s.staffActions || []).forEach(a => { if (!allStaffActions.includes(a)) allStaffActions.push(a); });
+      (s.staffActions || []).forEach(a => { if (!rawStaffActions.includes(a)) rawStaffActions.push(a); });
     }
   });
+  const allStaffActions = dedupeStaffActions(rawStaffActions);
 
   // ── Note lines ────────────────────────────────────────────────────────────
   const noteLines = (() => {
@@ -311,11 +438,16 @@ export default function App() {
   const doClassify = useCallback(async (text) => {
     setMatchStatus({ text: `Heard: "${text}" — matching…`, type:"classifying" });
     try {
-      const triggerList = snippets.map(s => s.trigger).join("\n");
+      // Build trigger list including synonyms
+      const triggerList = snippets.map(s => {
+        const syns = (s.synonyms || []).join(" | ");
+        return syns ? `${s.trigger} (also: ${syns})` : s.trigger;
+      }).join("\n");
       const res = await fetch("/api/classify", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ transcript: text, triggers: triggerList }) });
       const data = await res.json();
       if (data.match && data.match !== "none") {
-        const matched = snippets.find(s => s.trigger.toLowerCase() === data.match.toLowerCase());
+        // Match against trigger name only (strip the synonym part)
+        const matched = snippets.find(s => data.match.toLowerCase().startsWith(s.trigger.toLowerCase()));
         if (matched) {
           setTriggered(prev => [...prev, matched.id]);
           setMatchStatus({ text: `Matched: ${matched.trigger}`, type:"matched" });
@@ -363,6 +495,8 @@ export default function App() {
   const startTour = () => {
     setActiveTab("compose");
     setTourStep(0);
+    setTourTriggered([]);
+    setTourExpandedGroup(null);
     setTourActive(true);
     try { localStorage.setItem("lab_tour_prompted","1"); } catch {}
     setShowTourPrompt(false);
@@ -371,13 +505,65 @@ export default function App() {
     setShowTourPrompt(false);
     try { localStorage.setItem("lab_tour_prompted","1"); } catch {}
   };
+
+  const applyTourStep = (stepIdx, direction) => {
+    const step = TOUR_STEPS[stepIdx];
+    if (step.requireCompose) setActiveTab("compose");
+
+    if (direction === "forward" && step.addSnippetId) {
+      const snippetToAdd = snippets.find(s => s.id === step.addSnippetId);
+      if (snippetToAdd && !tourTriggered.includes(step.addSnippetId)) {
+        setTriggered(prev => [...prev, step.addSnippetId]);
+        setTourTriggered(prev => [...prev, step.addSnippetId]);
+      }
+    }
+    if (direction === "backward") {
+      // remove snippet that was added at the step we're leaving
+      const leavingStep = TOUR_STEPS[stepIdx + 1];
+      if (leavingStep?.addSnippetId) {
+        setTriggered(prev => {
+          const idx = [...prev].lastIndexOf(leavingStep.addSnippetId);
+          if (idx === -1) return prev;
+          const next = [...prev];
+          next.splice(idx, 1);
+          return next;
+        });
+        setTourTriggered(prev => prev.filter(id => id !== leavingStep.addSnippetId));
+      }
+    }
+    if (step.expandGroup) {
+      setLeftExpanded(p => ({ ...p, [step.expandGroup]: true }));
+      setTourExpandedGroup(step.expandGroup);
+    }
+  };
+
   const tourNext = () => {
-    if (tourStep >= TOUR_STEPS.length - 1) { setTourActive(false); return; }
+    if (tourStep >= TOUR_STEPS.length - 1) {
+      setTourActive(false);
+      // Clear tour-added snippets
+      setTriggered(prev => prev.filter(id => !tourTriggered.includes(id)));
+      setTourTriggered([]);
+      setTourExpandedGroup(null);
+      return;
+    }
     const next = tourStep + 1;
-    if (TOUR_STEPS[next].requireCompose) setActiveTab("compose");
+    applyTourStep(next, "forward");
     setTourStep(next);
   };
-  const tourSkip = () => setTourActive(false);
+
+  const tourPrev = () => {
+    if (tourStep <= 0) return;
+    const prev = tourStep - 1;
+    applyTourStep(prev, "backward");
+    setTourStep(prev);
+  };
+
+  const tourSkip = () => {
+    setTourActive(false);
+    setTriggered(prev => prev.filter(id => !tourTriggered.includes(id)));
+    setTourTriggered([]);
+    setTourExpandedGroup(null);
+  };
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
@@ -409,19 +595,19 @@ export default function App() {
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
-  const startEdit = (s) => { setEditingId(s.id); setEditText(s.text); setEditActions((s.clinicianActions||s.actions||[]).join("\n")); setEditStaffActions((s.staffActions||[]).join("\n")); };
+  const startEdit = (s) => { setEditingId(s.id); setEditText(s.text); setEditActions((s.clinicianActions||s.actions||[]).join("\n")); setEditStaffActions((s.staffActions||[]).join("\n")); setEditSynonyms((s.synonyms||[]).join("\n")); };
   const saveEdit = () => {
     const updated = snippets.map(s => s.id === editingId
-      ? { ...s, text: editText, clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean), staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean) }
+      ? { ...s, text: editText, clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean), staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean), synonyms: editSynonyms.split("\n").map(a=>a.trim()).filter(Boolean) }
       : s);
     setSnippets(updated); saveSnippets(updated); setEditingId(null);
   };
   const resetToDefault = (id) => {
     const def = DEFAULT_SNIPPETS.find(s => s.id === id);
     if (!def) return;
-    const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, clinicianActions: def.clinicianActions, staffActions: def.staffActions } : s);
+    const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, clinicianActions: def.clinicianActions, staffActions: def.staffActions, synonyms: def.synonyms || [] } : s);
     setSnippets(updated); saveSnippets(updated);
-    if (editingId === id) { setEditText(def.text); setEditActions(def.clinicianActions.join("\n")); setEditStaffActions(def.staffActions.join("\n")); }
+    if (editingId === id) { setEditText(def.text); setEditActions(def.clinicianActions.join("\n")); setEditStaffActions(def.staffActions.join("\n")); setEditSynonyms((def.synonyms||[]).join("\n")); }
   };
   const deleteSnippet = (id) => {
     const isDefault = DEFAULT_SNIPPETS.some(s => s.id === id);
@@ -447,10 +633,12 @@ export default function App() {
     const id = `custom_${Date.now()}`;
     const s = { id, group, trigger: newTrigger.trigger.trim(), text: newTrigger.text.trim(),
       clinicianActions: newTrigger.actions.split("\n").map(a=>a.trim()).filter(Boolean),
-      staffActions: newTrigger.staffActions.split("\n").map(a=>a.trim()).filter(Boolean), custom:true };
+      staffActions: newTrigger.staffActions.split("\n").map(a=>a.trim()).filter(Boolean),
+      synonyms: (newTrigger.synonyms||"").split("\n").map(a=>a.trim()).filter(Boolean),
+      custom:true };
     const updated = [...snippets, s];
     setSnippets(updated); saveSnippets(updated);
-    setNewTrigger({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
+    setNewTrigger({ trigger:"", text:"", actions:"", staffActions:"", synonyms:"", group:"", newGroup:"", useNew:false });
     setShowAddCustom(false);
   };
 
@@ -542,7 +730,7 @@ export default function App() {
           </svg>
           <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
             <span style={{ color:"white", fontWeight:700, fontSize:16, letterSpacing:"-0.01em", lineHeight:1.2 }}>Lab Results Note Builder</span>
-            <span style={{ color:"rgba(255,255,255,0.55)", fontSize:11, fontStyle:"italic", lineHeight:1.2 }}>Speedy lab results notes in your words</span>
+            <span style={{ color:"rgba(255,255,255,0.55)", fontSize:11, fontStyle:"italic", lineHeight:1.2 }}>Speedy lab results messages in your own words</span>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -659,11 +847,12 @@ export default function App() {
           {/* CENTER COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {/* Mic */}
-            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
-              <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:10, fontWeight:500, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.07em" }}>Add with voice</div>
-                <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Press mic and speak a trigger phrase</div>
+            <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"hidden" }}>
+              <div style={{ background:"#eff6ff", padding:"8px 12px", borderBottom:"1px solid #dbeafe" }}>
+                <div style={{ fontSize:10, fontWeight:500, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.07em" }}>Add with voice</div>
+                <div style={{ fontSize:10, color:"#93c5fd", marginTop:2 }}>Press mic and speak a trigger phrase</div>
               </div>
+              <div style={{ padding:"1rem 1.25rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                 <button ref={el => tourRefs.current.micBtn = el} onClick={isListening ? stopListening : startListening} style={{ width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0, background: isListening ? "#ef4444" : "#2563eb", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)", transition:"all 0.2s" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -678,6 +867,7 @@ export default function App() {
                   {matchStatus?.type==="nomatch" && <div style={{ color:"#d97706", fontSize:13 }}>{matchStatus.text}</div>}
                   {matchStatus?.type==="error" && <div style={{ color:"#dc2626", fontSize:13 }}>{matchStatus.text}</div>}
                 </div>
+              </div>
               </div>
             </div>
 
@@ -709,7 +899,7 @@ export default function App() {
             <div ref={el => tourRefs.current.notePreview = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", flex:1 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <div>
-                  <div style={{ fontSize:14, fontWeight:500, color:"#1f2937" }}>Patient note preview</div>
+                  <div style={{ fontSize:16, fontWeight:500, color:"#1f2937" }}>Patient note preview</div>
                   <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Click any bullet to edit</div>
                 </div>
                 <button ref={el => tourRefs.current.copyBtn = el} onClick={noteLines.length > 0 ? copyNote : undefined} disabled={noteLines.length === 0} style={{
@@ -923,7 +1113,9 @@ export default function App() {
                       </div>
                       {editingId === s.id ? (
                         <div style={{ marginTop:10 }}>
-                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing text</div>
+                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases that trigger this snippet — one per line)</div>
+                          <textarea value={editSynonyms} onChange={e=>setEditSynonyms(e.target.value)} placeholder="e.g. thyroid normal no meds&#10;TSH fine" style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Patient-facing text</div>
                           <textarea value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line)</div>
                           <textarea value={editActions} onChange={e=>setEditActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
@@ -954,6 +1146,8 @@ export default function App() {
             <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a", marginBottom:14 }}>Add custom trigger &amp; snippet</div>
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger phrase</div>
             <input value={newTrigger.trigger} onChange={e=>setNewTrigger(p=>({...p,trigger:e.target.value}))} placeholder="e.g. Lipids normal" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
+            <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases — one per line, optional)</div>
+            <textarea value={newTrigger.synonyms||""} onChange={e=>setNewTrigger(p=>({...p,synonyms:e.target.value}))} placeholder="e.g. cholesterol normal&#10;lipid panel fine" style={{ width:"100%", minHeight:50, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Patient-facing snippet text</div>
             <textarea value={newTrigger.text} onChange={e=>setNewTrigger(p=>({...p,text:e.target.value}))} placeholder="Text that appears in the note…" style={{ width:"100%", minHeight:80, fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", marginBottom:10 }} />
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Clinician action items (one per line, optional)</div>
@@ -1058,41 +1252,49 @@ export default function App() {
         const step = TOUR_STEPS[tourStep];
         const targetEl = tourRefs.current[step.ref];
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
-        const pad = 8;
-        const highlightStyle = rect ? {
-          position:"fixed", left: rect.left - pad, top: rect.top - pad,
-          width: rect.width + pad*2, height: rect.height + pad*2,
-          borderRadius: step.inHeader ? 8 : 10,
-          boxShadow: step.inHeader
-            ? "0 0 0 3px rgba(255,255,255,0.9), 0 0 0 6px rgba(255,255,255,0.3), 0 0 24px rgba(255,255,255,0.4)"
-            : "0 0 0 3px #2563eb, 0 0 0 6px rgba(37,99,235,0.25), 0 0 0 9999px rgba(0,0,0,0.48)",
-          zIndex: 400, pointerEvents:"none",
-          transition:"all 0.3s ease",
-        } : {};
-        const tipTop = rect ? rect.bottom + pad + 10 : "50%";
-        const tipLeft = rect ? Math.max(12, Math.min(rect.left, window.innerWidth - 320 - 12)) : "50%";
+        const pad = step.inHeader ? 6 : 8;
+        const hl = rect ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 } : null;
+        const ww = window.innerWidth; const wh = window.innerHeight;
+
+        // Smart tooltip positioning: place below target, flip above if near bottom
+        const tipW = 300;
+        const tipLeft = hl ? Math.max(8, Math.min(hl.left, ww - tipW - 8)) : ww/2 - tipW/2;
+        const belowTop = hl ? hl.top + hl.height + 12 : wh/2;
+        const tipTop = (hl && belowTop + 180 > wh) ? hl.top - 200 : belowTop;
+
+        const overlayColor = "rgba(0,0,0,0.52)";
         return (
           <>
-            {/* Dim overlay for non-header elements */}
-            {!step.inHeader && (
-              <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.48)", zIndex:399, pointerEvents:"none" }}/>
+            {/* Four-rectangle overlay that leaves spotlight bright */}
+            {hl ? <>
+              <div style={{ position:"fixed", left:0, top:0, width:"100%", height:hl.top, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:0, top:hl.top, width:hl.left, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:hl.left+hl.width, top:hl.top, width:`calc(100% - ${hl.left+hl.width}px)`, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              {/* Spotlight ring */}
+              <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height,
+                borderRadius: step.inHeader ? 8 : 10,
+                boxShadow: step.inHeader
+                  ? "0 0 0 3px rgba(255,255,255,0.9), 0 0 0 5px rgba(255,255,255,0.3)"
+                  : "0 0 0 3px #60a5fa, 0 0 0 5px rgba(96,165,250,0.4)",
+                zIndex:400, pointerEvents:"none" }}/>
+            </> : (
+              <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
             )}
-            {/* Spotlight ring */}
-            {rect && <div style={highlightStyle}/>}
+
             {/* Tooltip */}
-            <div style={{
-              position:"fixed", left: rect ? Math.max(12, Math.min(rect.left, window.innerWidth - 320 - 12)) : "50%",
-              top: rect ? Math.min(rect.bottom + 16, window.innerHeight - 160) : "50%",
-              width:300, background:"white", borderRadius:12, padding:"1.25rem",
-              boxShadow:"0 8px 32px rgba(0,0,0,0.2)", zIndex:401,
-              transform: !rect ? "translate(-50%,-50%)" : "none",
-            }}>
+            <div style={{ position:"fixed", left:tipLeft, top:tipTop, width:tipW,
+              background:"white", borderRadius:12, padding:"1.25rem",
+              boxShadow:"0 8px 32px rgba(0,0,0,0.22)", zIndex:401 }}>
               <div style={{ fontSize:13, fontWeight:600, color:"#1e3a8a", marginBottom:6 }}>{step.title}</div>
               <div style={{ fontSize:12, color:"#4b5563", lineHeight:1.6, marginBottom:14 }}>{step.body}</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <button onClick={tourSkip} style={{ fontSize:11, color:"#9ca3af", background:"none", border:"none", cursor:"pointer", padding:0 }}>Skip tour</button>
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   <span style={{ fontSize:11, color:"#9ca3af" }}>{tourStep + 1} / {TOUR_STEPS.length}</span>
+                  {tourStep > 0 && (
+                    <button onClick={tourPrev} style={{ background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>← Back</button>
+                  )}
                   <button onClick={tourNext} style={{ background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"6px 16px", cursor:"pointer", fontSize:12, fontWeight:500 }}>
                     {tourStep === TOUR_STEPS.length - 1 ? "Done" : "Next →"}
                   </button>
