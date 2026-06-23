@@ -321,7 +321,8 @@ export default function App() {
   const [exportEmail, setExportEmail] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [importDrag, setImportDrag] = useState(false);
-  const [dragOverGroup, setDragOverGroup] = useState(null);
+  const [leftColWidth, setLeftColWidth] = useState(999);
+  const leftColDivRef = useRef(null);
   const [draggingGroup, setDraggingGroup] = useState(null);
   const [stats, setStats] = useState({ visitors: "…", notes: "…" });
   const recognitionRef = useRef(null);
@@ -330,7 +331,18 @@ export default function App() {
 
   const groups = getGroupsOrdered(snippets, groupOrder);
 
-  // ── Fetch stats on mount ──────────────────────────────────────────────────
+  // Track left column width for adaptive abbreviations
+  useEffect(() => {
+    const el = leftColDivRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) setLeftColWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeTab]);
+
+  const useAbbrev = leftColWidth < 150;
   useEffect(() => {
     fetch("/api/stats?action=visit")
       .then(r => r.json())
@@ -707,7 +719,7 @@ export default function App() {
         <div style={{ maxWidth:1300, margin:"0 auto", padding:"1.25rem 1rem", display:"grid", gridTemplateColumns:"18% 1fr 26%", gap:"1rem" }}>
 
           {/* LEFT COLUMN */}
-          <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }} ref={el => tourRefs.current.leftCol = el}>
+          <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }} ref={el => { tourRefs.current.leftCol = el; leftColDivRef.current = el; }}>
             <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"visible" }}>
               <div style={{ background:"#eff6ff", padding:"8px 12px", borderBottom:"1px solid #dbeafe", borderRadius:"12px 12px 0 0" }}>
                 <div style={{ fontSize:10, fontWeight:500, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.07em" }}>Add by clicking</div>
@@ -750,8 +762,8 @@ export default function App() {
                           onMouseEnter={e=>{ if(!justAdded) e.currentTarget.style.color="#2563eb"; }} onMouseLeave={e=>{ if(!justAdded) e.currentTarget.style.color="#1e3a8a"; }}>
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block" }}>
                           {justAdded
-                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{GROUP_ABBREV[name] || name}</>
-                            : <>+ {GROUP_ABBREV[name] || name}</>
+                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>{useAbbrev ? (GROUP_ABBREV[name] || name) : name}</>
+                            : <>+ {useAbbrev ? (GROUP_ABBREV[name] || name) : name}</>
                           }
                           </span>
                         </button>
@@ -1219,7 +1231,18 @@ export default function App() {
         const targetEl = tourRefs.current[step.ref];
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
         const pad = step.inHeader ? 6 : 8;
-        const hl = rect ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 } : null;
+
+        // For cbcSection (step 4): extend spotlight to left edge of viewport so full row is included
+        let hl = null;
+        if (rect) {
+          if (step.ref === "cbcSection") {
+            hl = { left: 0, top: rect.top - pad, width: rect.right + pad, height: rect.height + pad*2 };
+          } else if (step.ref === "dragHandle") {
+            hl = { left: 0, top: rect.top - pad, width: rect.right + pad, height: rect.height + pad*2 };
+          } else {
+            hl = { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad*2, height: rect.height + pad*2 };
+          }
+        }
         const ww = window.innerWidth; const wh = window.innerHeight;
 
         // Smart tooltip positioning
@@ -1262,10 +1285,10 @@ export default function App() {
                 zIndex:400, pointerEvents:"none" }}/>
               {/* Handle arrow indicator for reorder step */}
               {step.showHandleArrow && (
-                <div style={{ position:"fixed", left: hl.left + 2, top: hl.top + hl.height/2 - 10,
-                  zIndex:401, pointerEvents:"none", display:"flex", alignItems:"center", gap:3 }}>
+                <div style={{ position:"fixed", left: 4, top: hl.top + hl.height/2 - 14,
+                  zIndex:401, pointerEvents:"none", display:"flex", alignItems:"center", gap:4 }}>
                   <div style={{ background:"#2563eb", color:"white", fontSize:10, fontWeight:700,
-                    padding:"3px 7px", borderRadius:4, whiteSpace:"nowrap" }}>← grip here</div>
+                    padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>grip here →</div>
                 </div>
               )}
             </> : (
@@ -1308,4 +1331,5 @@ export default function App() {
     </div>
   );
 }
+
 
