@@ -338,12 +338,27 @@ export default function App() {
   });
   const [phiChecked, setPhiChecked] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const devMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("devmode") === "true";
   const recognitionRef = useRef(null);
   const matchTimerRef = useRef(null);
   const continuousRef = useRef(false);
 
   const groups = getGroupsOrdered(snippets, groupOrder);
+
+  // Load JotForm embed handler for auto-resize
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.jotformEmbedHandler) {
+        window.jotformEmbedHandler("iframe[id='JotFormIFrame-261735977946073']", "https://form.jotform.com/");
+      }
+    };
+    document.body.appendChild(script);
+    return () => { try { document.body.removeChild(script); } catch {} };
+  }, []);
 
   // Track left column width for adaptive abbreviations
   useEffect(() => {
@@ -1347,13 +1362,36 @@ export default function App() {
             </div>
 
             <div style={{ borderTop:"1px solid #f3f4f6", paddingTop:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <a href="https://coming-soon" onClick={e => { e.preventDefault(); alert("Contact form coming soon!"); }}
+              <a href="https://form.jotform.com/261735977946073" onClick={e => { e.preventDefault(); setShowFeedback(true); }}
                 style={{ fontSize:13, color:"#2563eb", textDecoration:"none", display:"flex", alignItems:"center", gap:5 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 Report a bug, request a new feature, or contact developer
               </a>
               <button onClick={() => setShowAbout(false)} style={{ fontSize:13, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 18px", cursor:"pointer" }}>Close</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Feedback / Contact form ── */}
+      {showFeedback && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
+          <div style={{ background:"white", borderRadius:16, width:"min(640px, 95vw)", maxHeight:"90vh", display:"flex", flexDirection:"column", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", overflow:"hidden" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", borderBottom:"1px solid #e5e7eb", background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)" }}>
+              <span style={{ fontSize:14, fontWeight:600, color:"white" }}>Report a bug · Request a feature · Contact</span>
+              <button onClick={() => setShowFeedback(false)} style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", color:"white", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+            </div>
+            <iframe
+              id="JotFormIFrame-261735977946073"
+              title="Lab Results Note Builder Feedback Form"
+              onLoad={() => { if(window.parent) window.parent.scrollTo(0,0); }}
+              allowTransparency="true"
+              allow="geolocation; microphone; camera; fullscreen; payment"
+              src="https://form.jotform.com/261735977946073"
+              frameBorder="0"
+              style={{ minWidth:"100%", maxWidth:"100%", height:"539px", border:"none", flex:1 }}
+              scrolling="no"
+            />
           </div>
         </div>
       )}
