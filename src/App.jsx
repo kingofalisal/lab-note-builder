@@ -194,6 +194,20 @@ function getConflicts(triggeredIds, snippets) {
   return conflicts;
 }
 
+// ── Tour steps ────────────────────────────────────────────────────────────────
+const TOUR_STEPS = [
+  { ref:"tourBtn",        inHeader:true,  title:"Welcome to Lab Results Note Builder", body:"Assemble your lab results note by dictating trigger phrases or clicking the buttons. This quick tour shows you how everything works.", requireCompose:false },
+  { ref:"micBtn",         inHeader:false, title:"Add with voice", body:'Click the microphone button and speak phrases like "TSH normal" or "CBC normal". The app listens continuously — just keep speaking. Click stop when done.', requireCompose:true, animate:"voice" },
+  { ref:"leftCol",        inHeader:false, title:"Add by clicking", body:"Click any lab name to instantly add its normal result to your note. You'll get a checkmark confirmation when it's added.", requireCompose:true, animate:"click" },
+  { ref:"expandArrow",    inHeader:false, title:"Expand for abnormals", body:"Click the ▼ arrow next to any lab to see options for abnormal results or results on medication. Try expanding A1c to see diabetes-related comments.", requireCompose:true, animate:"expand" },
+  { ref:"dragHandle",     inHeader:false, title:"Reorder labs", body:"Drag the grip handle to reorder labs in the left column to match your workflow. Your order is saved automatically.", requireCompose:true, animate:"drag" },
+  { ref:"clinicianTodo",  inHeader:false, title:"Clinician to do", body:"When your comments include lab orders or prescriptions, they queue up here as checkboxes so you don't miss them.", requireCompose:true },
+  { ref:"staffTodo",      inHeader:false, title:"Staff to do", body:"Scheduling tasks for your staff populate here automatically. Use the Copy button to paste them directly into a staff message.", requireCompose:true },
+  { ref:"notePreview",    inHeader:false, title:"Edit your note", body:"Each bullet in the note preview is editable — click into any bullet to adjust the wording before copying.", requireCompose:true },
+  { ref:"copyBtn",        inHeader:false, title:"Copy to your EMR", body:"When your note looks right, click Copy note and paste it directly into your patient message in your EMR.", requireCompose:true },
+  { ref:"manageBtn",      inHeader:true,  title:"Manage snippets", body:"Click Manage Snippets to edit any response, add your own labs and triggers, delete defaults you don't need, or import/export your customizations.", requireCompose:false },
+];
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function App() {
   const [deletedIds, setDeletedIds] = useState(loadDeletedIds);
@@ -206,7 +220,14 @@ export default function App() {
   const [matchStatus, setMatchStatus] = useState(null);
   const [copied, setCopied] = useState(false);
   const [staffCopied, setStaffCopied] = useState(false);
-  const [noteEdits, setNoteEdits] = useState({}); // keyed by noteLines index
+  const [noteEdits, setNoteEdits] = useState({});
+  const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const [showTourPrompt, setShowTourPrompt] = useState(() => {
+    try { return !localStorage.getItem("lab_tour_prompted"); } catch { return false; }
+  });
+  const tourRefs = useRef({}); // keyed by noteLines index
   const [showNewNoteWarning, setShowNewNoteWarning] = useState(false);
   const [skipNewNoteWarning, setSkipNewNoteWarning] = useState(() => {
     try { return localStorage.getItem("lab_skip_new_note_warning") === "true"; } catch { return false; }
@@ -333,7 +354,30 @@ export default function App() {
   }, []);
 
   // ── Trigger actions ───────────────────────────────────────────────────────
-  const addTrigger = (id) => setTriggered(prev => [...prev, id]);
+  const addTrigger = (id) => {
+    setTriggered(prev => [...prev, id]);
+    setRecentlyAdded(id);
+    setTimeout(() => setRecentlyAdded(null), 900);
+  };
+
+  const startTour = () => {
+    setActiveTab("compose");
+    setTourStep(0);
+    setTourActive(true);
+    try { localStorage.setItem("lab_tour_prompted","1"); } catch {}
+    setShowTourPrompt(false);
+  };
+  const dismissTourPrompt = () => {
+    setShowTourPrompt(false);
+    try { localStorage.setItem("lab_tour_prompted","1"); } catch {}
+  };
+  const tourNext = () => {
+    if (tourStep >= TOUR_STEPS.length - 1) { setTourActive(false); return; }
+    const next = tourStep + 1;
+    if (TOUR_STEPS[next].requireCompose) setActiveTab("compose");
+    setTourStep(next);
+  };
+  const tourSkip = () => setTourActive(false);
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
@@ -480,7 +524,7 @@ export default function App() {
       <div style={{ maxWidth:1280, margin:"0 auto", minHeight:"100vh", background:"white", boxShadow:"0 0 40px rgba(30,64,175,0.08)" }}>
 
       {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)", padding:"0 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", height:58, boxShadow:"0 2px 8px rgba(30,64,175,0.3)" }}>
+      <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#2563eb 100%)", padding:"0 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", height:64, boxShadow:"0 2px 8px rgba(30,64,175,0.3)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
             <rect width="256" height="256" rx="57" fill="white" opacity="0.15"/>
@@ -496,22 +540,29 @@ export default function App() {
             <circle cx="120" cy="122" r="5" fill="none" stroke="#93c5fd" strokeWidth="3"/>
             <circle cx="140" cy="106" r="4" fill="none" stroke="#93c5fd" strokeWidth="2.5"/>
           </svg>
-          <div>
-            <span style={{ color:"white", fontWeight:700, fontSize:16, letterSpacing:"-0.01em" }}>Lab Results Note Builder</span>
-            <span style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginLeft:10, fontStyle:"italic" }}>Speedy lab results notes in your words</span>
+          <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+            <span style={{ color:"white", fontWeight:700, fontSize:16, letterSpacing:"-0.01em", lineHeight:1.2 }}>Lab Results Note Builder</span>
+            <span style={{ color:"rgba(255,255,255,0.55)", fontSize:11, fontStyle:"italic", lineHeight:1.2 }}>Speedy lab results notes in your words</span>
           </div>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <button onClick={handleNewNote} style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", color:"white", border:"1px solid rgba(255,255,255,0.3)", borderRadius:7, padding:"5px 14px", cursor:"pointer", fontSize:13, fontWeight:500 }}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button ref={el => tourRefs.current.tourBtn = el} onClick={handleNewNote} style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.15)", color:"white", border:"1px solid rgba(255,255,255,0.3)", borderRadius:7, padding:"5px 14px", cursor:"pointer", fontSize:13, fontWeight:500 }}
             onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New note
           </button>
-          <div style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:30, padding:3, gap:2 }}>
+          <div ref={el => tourRefs.current.manageBtn = el} style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:30, padding:3, gap:2 }}>
             {[["compose","Compose Note"],["manage","Manage Snippets"]].map(([key,label]) => (
               <button key={key} onClick={() => setActiveTab(key)} style={{ background: activeTab===key ? "white" : "transparent", color: activeTab===key ? "#1e40af" : "rgba(255,255,255,0.85)", border:"none", borderRadius:26, padding:"5px 16px", cursor:"pointer", fontSize:13, fontWeight: activeTab===key ? 600 : 400, transition:"all 0.2s", boxShadow: activeTab===key ? "0 1px 4px rgba(0,0,0,0.15)" : "none" }}>{label}</button>
             ))}
           </div>
+          {/* Tour lightbulb button */}
+          <button ref={el => tourRefs.current.tourBtn = el} onClick={startTour} title="Take a tour" style={{ width:34, height:34, borderRadius:"50%", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"white", transition:"background 0.15s", flexShrink:0 }}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-3 6l-1 2H9l-1-2c-1.5-1.5-3-3.5-3-6a7 7 0 0 1 7-7z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -520,19 +571,20 @@ export default function App() {
         <div style={{ maxWidth:1300, margin:"0 auto", padding:"1.25rem 1rem", display:"grid", gridTemplateColumns:"18% 1fr 26%", gap:"1rem" }}>
 
           {/* LEFT COLUMN */}
-          <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }} ref={el => tourRefs.current.leftCol = el}>
             <div style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"visible" }}>
               <div style={{ background:"#eff6ff", padding:"8px 12px", borderBottom:"1px solid #dbeafe", borderRadius:"12px 12px 0 0" }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Add by clicking</div>
+                <div style={{ fontSize:10, fontWeight:500, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.07em" }}>Add by clicking</div>
                 <div style={{ fontSize:10, color:"#93c5fd", marginTop:2 }}>Click name to add normal · ▼ for others</div>
               </div>
-              {groups.map(({ name, snippets:gSnippets }) => {
+              {groups.map(({ name, snippets:gSnippets }, groupIdx) => {
                 const defaultId = GROUP_DEFAULT_ID[name];
                 const defaultSnippet = gSnippets.find(s => s.id === defaultId) || gSnippets[0];
                 const otherSnippets = gSnippets.filter(s => s.id !== defaultSnippet?.id && !s.ephemeral);
                 const expanded = leftExpanded[name];
                 const isDragOver = dragOverGroup === name;
                 const isDragging = draggingGroup === name;
+                const justAdded = recentlyAdded === defaultSnippet?.id;
                 return (
                   <div key={name}
                     draggable
@@ -540,37 +592,57 @@ export default function App() {
                     onDragOver={e => handleDragOver(e, name)}
                     onDragLeave={() => setDragOverGroup(null)}
                     onDrop={e => handleDrop(e, name)}
+                    ref={groupIdx === 0 ? el => tourRefs.current.dragHandle = el : null}
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div style={{ display:"flex", alignItems:"center" }}>
-                      {/* Drag handle */}
-                      <div style={{ padding:"0 6px 0 8px", cursor:"grab", color:"#cbd5e1", fontSize:12, userSelect:"none" }} title="Drag to reorder">⠿</div>
+                      {/* Six-dot grip handle */}
+                      <div style={{ padding:"0 7px 0 9px", cursor:"grab", flexShrink:0, display:"flex", alignItems:"center" }} title="Drag to reorder" aria-hidden="true">
+                        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="2.5" cy="2.5" r="1.5" fill="#c4c1b9"/>
+                          <circle cx="7.5" cy="2.5" r="1.5" fill="#c4c1b9"/>
+                          <circle cx="2.5" cy="7" r="1.5" fill="#c4c1b9"/>
+                          <circle cx="7.5" cy="7" r="1.5" fill="#c4c1b9"/>
+                          <circle cx="2.5" cy="11.5" r="1.5" fill="#c4c1b9"/>
+                          <circle cx="7.5" cy="11.5" r="1.5" fill="#c4c1b9"/>
+                        </svg>
+                      </div>
                       {/* Header = default trigger clickable */}
                       <div className="trigger-row" style={{ flex:1, position:"relative" }}>
                         <button onClick={() => defaultSnippet && addTrigger(defaultSnippet.id)}
-                          style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color:"#1e3a8a" }}
-                          onMouseEnter={e=>e.currentTarget.style.color="#2563eb"} onMouseLeave={e=>e.currentTarget.style.color="#1e3a8a"}>
-                          + {name}
+                          style={{ width:"100%", textAlign:"left", padding:"8px 4px 8px 0", background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, color: justAdded ? "#16a34a" : "#1e3a8a", display:"flex", alignItems:"center", gap:5, transition:"color 0.2s" }}
+                          onMouseEnter={e=>{ if(!justAdded) e.currentTarget.style.color="#2563eb"; }} onMouseLeave={e=>{ if(!justAdded) e.currentTarget.style.color="#1e3a8a"; }}>
+                          {justAdded
+                            ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{name}</>
+                            : <>+ {name}</>
+                          }
                         </button>
                         {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
                       </div>
                       {/* Expand arrow */}
-                      {(otherSnippets.length > 0) && (
+                      {otherSnippets.length > 0 && (
                         <button onClick={() => setLeftExpanded(p=>({...p,[name]:!p[name]}))}
+                          ref={groupIdx === 3 ? el => tourRefs.current.expandArrow = el : null}
                           style={{ padding:"8px 10px", background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:10, transform: expanded?"rotate(180deg)":"rotate(0)", transition:"0.2s", flexShrink:0 }}>▼</button>
                       )}
                     </div>
                     {expanded && (
                       <div style={{ background:"#f8fafc", borderTop:"1px solid #f1f5f9" }}>
-                        {otherSnippets.map(s => (
-                          <div key={s.id} className="trigger-row" style={{ position:"relative" }}>
-                            <button onClick={() => addTrigger(s.id)}
-                              style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#374151", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
-                              onMouseEnter={e=>e.currentTarget.style.background="#dbeafe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                              + {s.trigger}
-                            </button>
-                            <div className="snippet-tooltip">{s.text}</div>
-                          </div>
-                        ))}
+                        {otherSnippets.map(s => {
+                          const justAddedOther = recentlyAdded === s.id;
+                          return (
+                            <div key={s.id} className="trigger-row" style={{ position:"relative" }}>
+                              <button onClick={() => addTrigger(s.id)}
+                                style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color: justAddedOther ? "#16a34a" : "#374151", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s, color 0.2s", display:"flex", alignItems:"center", gap:5 }}
+                                onMouseEnter={e=>{ if(!justAddedOther){ e.currentTarget.style.background="#dbeafe"; }}} onMouseLeave={e=>{ if(!justAddedOther){ e.currentTarget.style.background="none"; }}}>
+                                {justAddedOther
+                                  ? <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{s.trigger}</>
+                                  : <>+ {s.trigger}</>
+                                }
+                              </button>
+                              <div className="snippet-tooltip">{s.text}</div>
+                            </div>
+                          );
+                        })}
                         <button onClick={() => addWildcard(name)}
                           style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
                           onMouseEnter={e=>e.currentTarget.style.background="#ede9fe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
@@ -588,9 +660,12 @@ export default function App() {
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {/* Mic */}
             <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.05em" }}>Add with Voice</div>
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:10, fontWeight:500, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.07em" }}>Add with voice</div>
+                <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Press mic and speak a trigger phrase</div>
+              </div>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <button onClick={isListening ? stopListening : startListening} style={{ width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0, background: isListening ? "#ef4444" : "#2563eb", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)", transition:"all 0.2s" }}>
+                <button ref={el => tourRefs.current.micBtn = el} onClick={isListening ? stopListening : startListening} style={{ width:54, height:54, borderRadius:"50%", border:"none", cursor:"pointer", flexShrink:0, background: isListening ? "#ef4444" : "#2563eb", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: isListening ? "0 0 0 8px rgba(239,68,68,0.15)" : "0 2px 8px rgba(37,99,235,0.3)", transition:"all 0.2s" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     {isListening ? <rect x="6" y="6" width="12" height="12" rx="2"/> : <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>}
                   </svg>
@@ -631,20 +706,30 @@ export default function App() {
             )}
 
             {/* Note preview */}
-            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", flex:1 }}>
+            <div ref={el => tourRefs.current.notePreview = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", flex:1 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Patient Note Preview</div>
-                {noteLines.length > 0 && (
-                  <button onClick={copyNote} style={{ display:"flex", alignItems:"center", gap:6, background: copied?"#16a34a":"#2563eb", color:"white", border:"none", borderRadius:7, padding:"6px 14px", cursor:"pointer", fontSize:12, fontWeight:500, transition:"background 0.2s" }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      {copied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
-                    </svg>
-                    {copied ? "Copied!" : "Copy note"}
-                  </button>
-                )}
+                <div>
+                  <div style={{ fontSize:14, fontWeight:500, color:"#1f2937" }}>Patient note preview</div>
+                  <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Click any bullet to edit</div>
+                </div>
+                <button ref={el => tourRefs.current.copyBtn = el} onClick={noteLines.length > 0 ? copyNote : undefined} disabled={noteLines.length === 0} style={{
+                  display:"flex", alignItems:"center", gap:6,
+                  background: copied ? "#16a34a" : noteLines.length === 0 ? "#e5e7eb" : "#2563eb",
+                  color: noteLines.length === 0 ? "#9ca3af" : "white",
+                  border:"none", borderRadius:7, padding:"6px 14px", cursor: noteLines.length === 0 ? "default" : "pointer",
+                  fontSize:12, fontWeight:500, transition:"background 0.2s"
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    {copied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
+                  </svg>
+                  {copied ? "Copied!" : "Copy note"}
+                </button>
               </div>
               {noteLines.length === 0
-                ? <div style={{ color:"#d1d5db", fontSize:13, fontStyle:"italic", textAlign:"center", padding:"2rem 0" }}>Your note will appear here as you add triggers</div>
+                ? <div style={{ color:"#9ca3af", fontSize:13, fontStyle:"italic", textAlign:"center", padding:"2rem 0", lineHeight:1.6 }}>
+                    Your note will appear here as you add triggers.<br/>
+                    <span style={{ fontSize:11 }}>Click a lab name in the left column, or press the mic button to speak.</span>
+                  </div>
                 : <div style={{ fontSize:13, lineHeight:1.75, color:"#1f2937" }}>
                     <div style={{ color:"#374151", marginBottom:"1rem", fontStyle:"italic", borderLeft:"3px solid #bfdbfe", paddingLeft:12, fontSize:12 }}>{hf.header}</div>
                     {noteLines.map((line, i) => {
@@ -693,12 +778,14 @@ export default function App() {
           {/* RIGHT COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {/* Clinician To Do */}
-            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <div style={{ fontSize:11, fontWeight:700, color:"#92400e", textTransform:"uppercase", letterSpacing:"0.05em" }}>Clinician To Do</div>
+            <div ref={el => tourRefs.current.clinicianTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+              <div style={{ marginBottom:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background:"#d97706", display:"inline-block", flexShrink:0 }}/>
+                  <span style={{ fontSize:12, fontWeight:500, color:"#92400e" }}>Clinician to do</span>
+                </div>
+                <div style={{ fontSize:11, color:"#9ca3af", paddingLeft:14 }}>Lab orders · Rx · Referrals</div>
               </div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginBottom:12 }}>Lab orders · Rx · Referrals</div>
               {allClinicianActions.length === 0
                 ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Clinician tasks appear here when relevant triggers are added</div>
                 : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -718,15 +805,18 @@ export default function App() {
             </div>
 
             {/* Staff To Do */}
-            <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#1e40af", textTransform:"uppercase", letterSpacing:"0.05em" }}>Staff To Do</div>
+            <div ref={el => tourRefs.current.staffTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12 }}>
+                <div>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+                    <span style={{ width:8, height:8, borderRadius:"50%", background:"#2563eb", display:"inline-block", flexShrink:0 }}/>
+                    <span style={{ fontSize:12, fontWeight:500, color:"#1e40af" }}>Staff to do</span>
+                  </div>
+                  <div style={{ fontSize:11, color:"#9ca3af", paddingLeft:14 }}>Scheduling · Patient contact</div>
                 </div>
                 {allStaffActions.length > 0 && (
                   <button onClick={() => { const text = allStaffActions.map(a=>`• ${a}`).join("\n"); navigator.clipboard.writeText(text).then(()=>{ setStaffCopied(true); setTimeout(()=>setStaffCopied(false),2000); }); }}
-                    style={{ display:"flex", alignItems:"center", gap:5, background: staffCopied?"#16a34a":"#eff6ff", color: staffCopied?"white":"#1e40af", border:`1px solid ${staffCopied?"#16a34a":"#bfdbfe"}`, borderRadius:6, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:500, transition:"all 0.2s" }}>
+                    style={{ display:"flex", alignItems:"center", gap:5, background: staffCopied?"#16a34a":"#eff6ff", color: staffCopied?"white":"#1e40af", border:`1px solid ${staffCopied?"#16a34a":"#bfdbfe"}`, borderRadius:6, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:500, transition:"all 0.2s", flexShrink:0 }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       {staffCopied ? <polyline points="20 6 9 17 4 12"/> : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>}
                     </svg>
@@ -734,7 +824,6 @@ export default function App() {
                   </button>
                 )}
               </div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginBottom:12 }}>Scheduling · Patient contact</div>
               {allStaffActions.length === 0
                 ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Staff tasks appear here when relevant triggers are added</div>
                 : <div style={{ background:"#f8fafc", borderRadius:8, padding:"10px 12px", border:"1px solid #e5e7eb" }}>
@@ -748,20 +837,20 @@ export default function App() {
               }
             </div>
 
-            {/* Stats counter */}
-            <div style={{ background:"#f8fafc", borderRadius:12, padding:"1rem 1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.05)", border:"1px solid #e5e7eb" }}>
-              <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Site Activity</div>
-              <div style={{ display:"flex", justifyContent:"space-around" }}>
+            {/* Stats — quiet strip */}
+            <div style={{ borderTop:"0.5px solid #e5e7eb", paddingTop:12 }}>
+              <div style={{ display:"flex", justifyContent:"space-around", alignItems:"center" }}>
                 <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:700, color:"#1e40af" }}>{stats.visitors === "…" ? "…" : Number(stats.visitors).toLocaleString()}</div>
-                  <div style={{ fontSize:10, color:"#6b7280", marginTop:2 }}>Total visits</div>
+                  <div style={{ fontSize:18, fontWeight:500, color:"#6b7280" }}>{stats.visitors === "…" ? "…" : Number(stats.visitors).toLocaleString()}</div>
+                  <div style={{ fontSize:10, color:"#9ca3af", marginTop:1, textTransform:"uppercase", letterSpacing:"0.05em" }}>Visits</div>
                 </div>
-                <div style={{ width:1, background:"#e5e7eb" }} />
+                <div style={{ width:1, height:28, background:"#e5e7eb" }}/>
                 <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:700, color:"#1e40af" }}>{stats.notes === "…" ? "…" : Number(stats.notes).toLocaleString()}</div>
-                  <div style={{ fontSize:10, color:"#6b7280", marginTop:2 }}>Notes created</div>
+                  <div style={{ fontSize:18, fontWeight:500, color:"#6b7280" }}>{stats.notes === "…" ? "…" : Number(stats.notes).toLocaleString()}</div>
+                  <div style={{ fontSize:10, color:"#9ca3af", marginTop:1, textTransform:"uppercase", letterSpacing:"0.05em" }}>Notes created</div>
                 </div>
               </div>
+              <div style={{ fontSize:10, color:"#d1d5db", textAlign:"center", marginTop:6 }}>Lab Results Note Builder · site activity</div>
             </div>
           </div>
         </div>
@@ -944,6 +1033,75 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ── TOUR PROMPT (first visit) ── */}
+      {showTourPrompt && !tourActive && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
+          <div style={{ background:"white", borderRadius:16, padding:"2rem", width:380, maxWidth:"92vw", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", textAlign:"center" }}>
+            <div style={{ width:52, height:52, borderRadius:"50%", background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-3 6l-1 2H9l-1-2c-1.5-1.5-3-3.5-3-6a7 7 0 0 1 7-7z"/>
+              </svg>
+            </div>
+            <div style={{ fontSize:16, fontWeight:600, color:"#1e3a8a", marginBottom:8 }}>Welcome to Lab Results Note Builder</div>
+            <div style={{ fontSize:13, color:"#6b7280", lineHeight:1.6, marginBottom:24 }}>Would you like a quick tour showing how to use the app? It takes about 90 seconds.</div>
+            <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+              <button onClick={startTour} style={{ background:"#2563eb", color:"white", border:"none", borderRadius:8, padding:"9px 22px", cursor:"pointer", fontSize:13, fontWeight:500 }}>Yes, show me around</button>
+              <button onClick={dismissTourPrompt} style={{ background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:8, padding:"9px 18px", cursor:"pointer", fontSize:13 }}>Skip for now</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TOUR OVERLAY ── */}
+      {tourActive && (() => {
+        const step = TOUR_STEPS[tourStep];
+        const targetEl = tourRefs.current[step.ref];
+        const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+        const pad = 8;
+        const highlightStyle = rect ? {
+          position:"fixed", left: rect.left - pad, top: rect.top - pad,
+          width: rect.width + pad*2, height: rect.height + pad*2,
+          borderRadius: step.inHeader ? 8 : 10,
+          boxShadow: step.inHeader
+            ? "0 0 0 3px rgba(255,255,255,0.9), 0 0 0 6px rgba(255,255,255,0.3), 0 0 24px rgba(255,255,255,0.4)"
+            : "0 0 0 3px #2563eb, 0 0 0 6px rgba(37,99,235,0.25), 0 0 0 9999px rgba(0,0,0,0.48)",
+          zIndex: 400, pointerEvents:"none",
+          transition:"all 0.3s ease",
+        } : {};
+        const tipTop = rect ? rect.bottom + pad + 10 : "50%";
+        const tipLeft = rect ? Math.max(12, Math.min(rect.left, window.innerWidth - 320 - 12)) : "50%";
+        return (
+          <>
+            {/* Dim overlay for non-header elements */}
+            {!step.inHeader && (
+              <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.48)", zIndex:399, pointerEvents:"none" }}/>
+            )}
+            {/* Spotlight ring */}
+            {rect && <div style={highlightStyle}/>}
+            {/* Tooltip */}
+            <div style={{
+              position:"fixed", left: rect ? Math.max(12, Math.min(rect.left, window.innerWidth - 320 - 12)) : "50%",
+              top: rect ? Math.min(rect.bottom + 16, window.innerHeight - 160) : "50%",
+              width:300, background:"white", borderRadius:12, padding:"1.25rem",
+              boxShadow:"0 8px 32px rgba(0,0,0,0.2)", zIndex:401,
+              transform: !rect ? "translate(-50%,-50%)" : "none",
+            }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"#1e3a8a", marginBottom:6 }}>{step.title}</div>
+              <div style={{ fontSize:12, color:"#4b5563", lineHeight:1.6, marginBottom:14 }}>{step.body}</div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <button onClick={tourSkip} style={{ fontSize:11, color:"#9ca3af", background:"none", border:"none", cursor:"pointer", padding:0 }}>Skip tour</button>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <span style={{ fontSize:11, color:"#9ca3af" }}>{tourStep + 1} / {TOUR_STEPS.length}</span>
+                  <button onClick={tourNext} style={{ background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"6px 16px", cursor:"pointer", fontSize:12, fontWeight:500 }}>
+                    {tourStep === TOUR_STEPS.length - 1 ? "Done" : "Next →"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
