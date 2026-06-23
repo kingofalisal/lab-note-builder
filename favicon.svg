@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Navy background -->
+  <rect width="256" height="256" rx="57" fill="#1e40af"/>
+  <!-- Beaker outline — rounded flared body -->
+  <path d="
+    M100,76 L100,144
+    Q100,157 90,173
+    L64,211
+    Q61,217 70,217
+    L186,217
+    Q195,217 192,211
+    L166,173
+    Q156,157 156,144
+    L156,76
+  " fill="none" stroke="white" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- flat rim -->
+  <line x1="86" y1="76" x2="170" y2="76" stroke="white" stroke-width="9" stroke-linecap="round"/>
+  <!-- liquid fill — contained inside beaker walls -->
+  <path d="
+    M104,180
+    Q94,165 90,173
+    L64,211
+    L192,211
+    L166,173
+    Q162,165 152,180
+    Z
+  " fill="#60a5fa" opacity="0.75"/>
+  <!-- liquid surface -->
+  <line x1="104" y1="180" x2="152" y2="180" stroke="#93c5fd" stroke-width="4" stroke-linecap="round"/>
+  <!-- filled bubbles in liquid -->
+  <circle cx="90" cy="198" r="8" fill="#bfdbfe" opacity="0.85"/>
+  <circle cx="128" cy="193" r="6" fill="#bfdbfe" opacity="0.85"/>
+  <circle cx="162" cy="200" r="5" fill="#bfdbfe" opacity="0.85"/>
+  <!-- rising outline bubbles -->
+  <circle cx="114" cy="160" r="8" fill="none" stroke="#93c5fd" stroke-width="4"/>
+  <circle cx="138" cy="142" r="7" fill="none" stroke="#93c5fd" stroke-width="3.5"/>
+  <circle cx="120" cy="122" r="5" fill="none" stroke="#93c5fd" stroke-width="3"/>
+  <circle cx="140" cy="106" r="4" fill="none" stroke="#93c5fd" stroke-width="2.5"/>
+</svg>
