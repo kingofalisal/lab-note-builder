@@ -307,25 +307,58 @@ function loadPicklistLibrary() {
 function savePicklistLibrary(lib) { localStorage.setItem("lab_picklist_library_v1", JSON.stringify(lib)); }
 
 // ── Manage Snippets Tour Steps ────────────────────────────────────────────────
+// highlightField: ref key of field to give amber border highlight
+// tooltipSide: "right" places tooltip to right of spotlight (for modals)
 const MANAGE_TOUR_STEPS = [
-  { ref:"mEditHf",       title:"Edit header & footer",         body:"Customize the messages that start and end every lab result note. Click the header or footer field to edit, then save." },
-  { ref:"mIronGroup",    title:"Expand a lab group",           body:"Click the arrow on any lab group to see its snippets. Here we've expanded Iron studies to show its options.", expandGroup:"Fe/TIBC/Ferr", showArrow:true },
-  { ref:"mIronGroup",    title:"Iron studies options",         body:"Each expanded group shows all available snippets. Click a snippet name to expand it further and see its content." },
-  { ref:"mEditBtn",      title:"Edit a snippet",               body:"Click the Edit button on any snippet to open the edit form and customize its content." },
-  { ref:"mTriggerField", title:"Snippet name",                 body:"The trigger name is what appears in the left column and in triggered pills. Rename it to match your preferred terminology.", openEdit:true },
-  { ref:"mSynonymsField",title:"Voice synonyms",               body:"Add alternate phrases here — one per line — so various ways of saying the same thing will all trigger this snippet." },
-  { ref:"mTextField",    title:"Patient-facing text",          body:"This is the text that drops into your note. Edit it to match your preferred wording and style." },
-  { ref:"mActionsField", title:"Clinician action items",       body:"These reminders queue up in the Clinician To Do panel — a task list to ensure you follow through on what you're telling your patient." },
-  { ref:"mStaffField",   title:"Staff action items",           body:"These queue up in the Staff To Do panel so you can easily copy and paste them into a staff message." },
-  { ref:"mPillInText",   title:"Selection pills in snippets",  body:"You can include selection pills in your snippets to adjust time intervals or messaging. The first option is the default and populates your note automatically. Click to change it.", switchToTransaminitis:true },
-  { ref:"mInsertPillBtn",title:"Insert a selection pill",      body:"Position your cursor in the patient text field, then click Insert selection pill to choose from your library and embed it at the cursor position." },
-  { ref:"mInsertPillModal",title:"Choose a pill to insert",   body:"Select an existing selection pill from your library to insert it into the snippet text at the cursor position.", openInsertModal:true },
-  { ref:"mManagePillsBtn",title:"Manage selection pills",      body:"You can also create your own selection pills with custom options and defaults. Click Manage selection pills to build your library.", closeInsertModal:true },
-  { ref:"mPillLibraryModal",title:"Build your pill library",   body:"Add a new selection pill, name it, add options, reorder them with ↑↓, and click ★ to set your default selection.", openPillLibrary:true, openNewPill:true },
-  { ref:"mDeleteBtn",    title:"Delete snippets",              body:"Delete any snippets you don't need. Deleted snippets can be restored later from the toolbar using Restore deleted triggers.", closePillLibrary:true },
-  { ref:"mAddCustomBtn", title:"Add your own content",         body:"Click Add custom trigger to create your own snippets from scratch — trigger phrase, synonyms, patient text, actions, and lab group." },
-  { ref:"mAddCustomModal",title:"Create a custom snippet",     body:"Fill in the trigger phrase, voice synonyms, patient-facing text, and any clinician or staff actions. Add it to an existing lab group or create a new one.", openAddCustom:true },
-  { ref:"mExportBtn",    title:"Export your customizations",   body:"Export your customizations as a file to share with colleagues or import onto another computer. All your edits, group order, and selection pills are included." },
+  { ref:"mEditHf",         title:"Edit header & footer",
+    body:"Customize the messages that start and end every lab result note. Click the Edit button to open the fields and save your changes." },
+  { ref:"mIronGroup",      title:"Expand a lab group",
+    body:"Click the ▼ arrow on any lab group to see its snippets. Try expanding Iron studies to see the available options.",
+    showArrow:true, collapsed:true },
+  { ref:"mEditBtn",        title:"Edit a snippet",
+    body:"Click the Edit button on any snippet to open the editing form and customize its content.",
+    expandGroup:"Fe/TIBC/Ferr", showEditArrow:true },
+  { ref:"mIronEditForm",   title:"Snippet name",
+    body:"The trigger name appears in the left column and in triggered pills. Rename it to match your preferred terminology.",
+    openEdit:true, highlightField:"mTriggerField" },
+  { ref:"mIronEditForm",   title:"Voice synonyms",
+    body:"Add alternate phrases here — one per line — so various spoken phrases will all trigger this snippet.",
+    highlightField:"mSynonymsField" },
+  { ref:"mIronEditForm",   title:"Patient-facing text",
+    body:"This is the text that drops into your note. Edit it to match your preferred wording and style.",
+    highlightField:"mTextField" },
+  { ref:"mIronEditForm",   title:"Clinician action items",
+    body:"These reminders queue up in the Clinician To Do panel — a task list to ensure you follow through on what you're telling your patient.",
+    highlightField:"mActionsField" },
+  { ref:"mIronEditForm",   title:"Staff action items",
+    body:"These queue up in the Staff To Do panel so you can easily copy and paste them into a staff message.",
+    highlightField:"mStaffField" },
+  { ref:"mIronEditForm",   title:"Selection pills in snippets",
+    body:"You can include selection pills to adjust time intervals or messaging inline. The first option is the default — it populates your note automatically. Click a pill to change the selection.",
+    switchToTransaminitis:true, highlightField:"mPillInText" },
+  { ref:"mIronEditForm",   title:"Insert a selection pill",
+    body:"Position your cursor in the patient text field, then click Insert selection pill to choose a pill from your library and embed it at the cursor position.",
+    highlightField:"mInsertPillBtn" },
+  { ref:"mInsertPillModal",title:"Choose a pill to insert",
+    body:"Select an existing selection pill from your library to insert it into the snippet text at the cursor position.",
+    openInsertModal:true, tooltipSide:"right" },
+  { ref:"mManagePillsBtn", title:"Manage selection pills",
+    body:"Create your own selection pills with custom options and defaults. Click Manage selection pills to build your library.",
+    closeInsertModal:true },
+  { ref:"mPillLibraryModal",title:"Build your pill library",
+    body:"Add a new selection pill, name it, add options, reorder them with ↑↓, and click ★ to set your default selection.",
+    openPillLibrary:true, openNewPill:true },
+  { ref:"mDeleteBtn",      title:"Delete snippets",
+    body:"Delete any snippets you don't need. Deleted snippets can be restored later from the toolbar using Restore deleted triggers.",
+    closePillLibrary:true },
+  { ref:"mAddCustomBtn",   title:"Add your own content",
+    body:"Click Add custom trigger to create your own snippets — trigger phrase, synonyms, patient text, actions, and lab group." },
+  { ref:"mAddCustomModal", title:"Create a custom snippet",
+    body:"Fill in the trigger phrase, voice synonyms, patient-facing text, and any clinician or staff actions. Add it to an existing lab group or create a new one.",
+    openAddCustom:true, tooltipSide:"right" },
+  { ref:"mExportBtn",      title:"Export your customizations",
+    body:"Export your customizations as a file to share with colleagues or import onto another computer. All your edits, group order, and selection pills are included.",
+    closeAddCustom:true },
 ];
 
 // ── Main Component ─────────────────────────────────────────────────────────────
@@ -484,6 +517,17 @@ export default function App() {
   }, [activeTab]);
 
   const useAbbrev = leftColWidth < 150;
+
+  // Scroll-aware spotlight — re-read rects on scroll during either tour
+  useEffect(() => {
+    if (!tourActive && !manageTourActive) return;
+    const handler = () => {
+      if (tourActive) setTourRenderTick(n => n+1);
+      if (manageTourActive) setManageTourRenderTick(n => n+1);
+    };
+    window.addEventListener("scroll", handler, true);
+    return () => window.removeEventListener("scroll", handler, true);
+  }, [tourActive, manageTourActive]);
 
   // Force overlay re-render after expansion DOM settles (steps 4 & 5)
   useEffect(() => {
@@ -731,39 +775,51 @@ export default function App() {
   const applyManageTourStep = (stepIdx) => {
     const step = MANAGE_TOUR_STEPS[stepIdx];
     if (!step) return;
+
+    // Expand group accordion if needed
     if (step.expandGroup) {
       setManageOpen(p => ({ ...p, [step.expandGroup]: true }));
-      setTimeout(() => setManageTourRenderTick(n => n+1), 100);
     }
+
+    // openEdit: open Iron studies normal in edit mode
     if (step.openEdit) {
-      // Find first Iron studies snippet and open edit
-      const ironSnippet = snippets.find(s => s.group === "Fe/TIBC/Ferr" && !s.ephemeral);
+      const ironSnippet = snippets.find(s => s.id === "iron_normal");
       if (ironSnippet) { setManageOpen(p=>({...p,"Fe/TIBC/Ferr":true})); startEdit(ironSnippet); }
-      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
     }
+
+    // switchToTransaminitis: switch edit to transaminitis_new
     if (step.switchToTransaminitis) {
       const trans = snippets.find(s => s.id === "transaminitis_new");
       if (trans) { setManageOpen(p=>({...p,"LFTs":true})); startEdit(trans); }
-      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
     }
-    if (step.openInsertModal) setShowInsertPill("transaminitis_new");
+
+    // openInsertModal: open insert pill modal for current editing snippet
+    if (step.openInsertModal) setShowInsertPill(editingId || "transaminitis_new");
+
+    // closeInsertModal
     if (step.closeInsertModal) setShowInsertPill(null);
+
+    // openPillLibrary with new pill
     if (step.openPillLibrary) {
       setShowPicklistLib(true);
-      // Open new pill edit state
-      const newId = `pl_tour_preview`;
       setPillEditState({name:"New pill",defaultValue:"option 1",options:["option 1","option 2","option 3"]});
-      setEditingPillId(newId);
-      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
+      setEditingPillId("pl_tour_preview");
     }
+
+    // closePillLibrary and show iron_normal delete button
     if (step.closePillLibrary) {
       setShowPicklistLib(false); setEditingPillId(null); setPillEditState(null);
-      // Find iron_normal for delete button spotlight
       const ironSnippet = snippets.find(s => s.id === "iron_normal");
       if (ironSnippet) { setManageOpen(p=>({...p,"Fe/TIBC/Ferr":true})); setEditingId(null); }
-      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
     }
+
+    // openAddCustom
     if (step.openAddCustom) setShowAddCustom(true);
+
+    // closeAddCustom
+    if (step.closeAddCustom) setShowAddCustom(false);
+
+    setTimeout(() => setManageTourRenderTick(n => n+1), 120);
   };
 
   const manageTourNext = () => {
@@ -789,17 +845,13 @@ export default function App() {
     resetManageTourState();
   };
 
-  // Force re-render after manage tour step DOM changes
   useEffect(() => {
     if (!manageTourActive) return;
-    const step = MANAGE_TOUR_STEPS[manageTourStep];
-    if (step?.expandGroup || step?.openEdit || step?.switchToTransaminitis || step?.openPillLibrary || step?.closePillLibrary) {
-      const raf1 = requestAnimationFrame(() => {
-        const raf2 = requestAnimationFrame(() => setManageTourRenderTick(n => n+1));
-        return () => cancelAnimationFrame(raf2);
-      });
-      return () => cancelAnimationFrame(raf1);
-    }
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => setManageTourRenderTick(n => n+1));
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
   }, [manageTourStep, manageTourActive]);
 
   const addWildcard = (group) => {
@@ -1438,7 +1490,7 @@ export default function App() {
                         )}
                       </div>
                       {editingId === s.id ? (
-                        <div style={{ marginTop:10 }}>
+                        <div ref={el => { if(s.id==="iron_normal") tourRefs.current.mIronEditForm=el; }} style={{ marginTop:10 }}>
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger name (shown in left column and triggered pills)</div>
                           <input ref={el => tourRefs.current.mTriggerField=el} value={editTrigger} onChange={e=>setEditTrigger(e.target.value)} style={{ width:"100%", fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases that trigger this snippet — one per line)</div>
@@ -1825,12 +1877,16 @@ export default function App() {
         const step = MANAGE_TOUR_STEPS[manageTourStep];
         const targetEl = tourRefs.current[step.ref];
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+        const fieldEl = step.highlightField ? tourRefs.current[step.highlightField] : null;
         const pad = 8;
         const hl = rect ? { left: rect.left-pad, top: rect.top-pad, width: rect.width+pad*2, height: rect.height+pad*2 } : null;
         const ww = window.innerWidth; const wh = window.innerHeight;
         const tipW = 300; const tipH = 210;
         let tipLeft, tipTop;
-        if (hl) {
+        if (step.tooltipSide === "right" && hl) {
+          tipLeft = Math.min(hl.left + hl.width + 12, ww - tipW - 8);
+          tipTop = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+        } else if (hl) {
           const belowTop = hl.top + hl.height + 12;
           const aboveTop = hl.top - tipH - 12;
           const fitsBelow = belowTop + tipH <= wh - 8;
@@ -1846,14 +1902,33 @@ export default function App() {
               <div style={{ position:"fixed", left:0, top:hl.top, width:hl.left, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
               <div style={{ position:"fixed", left:hl.left+hl.width, top:hl.top, width:`calc(100% - ${hl.left+hl.width}px)`, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
               <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              {/* Spotlight ring */}
               <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height, borderRadius:10, boxShadow:"0 0 0 3px #7c3aed, 0 0 0 5px rgba(124,58,237,0.3)", zIndex:400, pointerEvents:"none" }}/>
+              {/* Expand arrow indicator */}
               {step.showArrow && rect && (
-                <div style={{ position:"fixed", left: Math.min(rect.right + 8, ww - 120), top: rect.top + rect.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
-                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>← expand here</div>
+                <div style={{ position:"fixed", right: ww - rect.right + 8, top: rect.top + 10, zIndex:401, pointerEvents:"none" }}>
+                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand</div>
                 </div>
               )}
+              {/* Edit button arrow indicator */}
+              {step.showEditArrow && (() => {
+                const editEl = tourRefs.current.mEditBtn;
+                const er = editEl ? editEl.getBoundingClientRect() : null;
+                return er ? (
+                  <div style={{ position:"fixed", left: er.left - 90, top: er.top + er.height/2 - 12, zIndex:401, pointerEvents:"none" }}>
+                    <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click Edit →</div>
+                  </div>
+                ) : null;
+              })()}
+              {/* Field highlight border */}
+              {fieldEl && (() => {
+                const fr = fieldEl.getBoundingClientRect();
+                return (
+                  <div style={{ position:"fixed", left:fr.left-2, top:fr.top-2, width:fr.width+4, height:fr.height+4, borderRadius:6, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.15)", zIndex:401, pointerEvents:"none" }}/>
+                );
+              })()}
             </> : <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>}
-            <div style={{ position:"fixed", left:tipLeft, top:tipTop, width:tipW, background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 8px 32px rgba(0,0,0,0.22)", zIndex:401 }}>
+            <div style={{ position:"fixed", left:tipLeft, top:tipTop, width:tipW, background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 8px 32px rgba(0,0,0,0.22)", zIndex:402 }}>
               <div style={{ fontSize:13, fontWeight:600, color:"#7c3aed", marginBottom:6 }}>{step.title}</div>
               <div style={{ fontSize:12, color:"#4b5563", lineHeight:1.6, marginBottom:14 }}>{step.body}</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
