@@ -519,7 +519,7 @@ export default function App() {
 
   const useAbbrev = leftColWidth < 150;
 
-  // Scroll-aware spotlight — re-read rects on scroll during either tour
+  // Scroll + resize aware spotlight — re-read rects on scroll or resize during either tour
   useEffect(() => {
     if (!tourActive && !manageTourActive) return;
     const handler = () => {
@@ -527,7 +527,11 @@ export default function App() {
       if (manageTourActive) setManageTourRenderTick(n => n+1);
     };
     window.addEventListener("scroll", handler, true);
-    return () => window.removeEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
   }, [tourActive, manageTourActive]);
 
   // Force overlay re-render after expansion DOM settles (steps 4 & 5)
@@ -1950,18 +1954,39 @@ export default function App() {
                   </div>
                 ) : null;
               })()}
-              {/* Field highlight border */}
+              {/* Field highlight border — or precise pill token highlight */}
               {fieldEl && (() => {
                 const fr = fieldEl.getBoundingClientRect();
+                if (step.showPillBadge) {
+                  // Measure exact position of {{...}} token within the textarea using mirror div
+                  const text = fieldEl.value || "";
+                  const tokenMatch = /\{\{[^}]+\}\}/.exec(text);
+                  if (tokenMatch) {
+                    const style = window.getComputedStyle(fieldEl);
+                    const mirror = document.createElement("div");
+                    mirror.style.cssText = `position:fixed;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;overflow:hidden;pointer-events:none;z-index:-1;`;
+                    ["fontFamily","fontSize","fontWeight","lineHeight","letterSpacing","padding","paddingTop","paddingBottom","paddingLeft","paddingRight","borderLeft","borderRight","borderTop","borderBottom","boxSizing"].forEach(p => mirror.style[p] = style[p]);
+                    mirror.style.width = fr.width + "px";
+                    // Text before token
+                    const before = document.createElement("span");
+                    before.textContent = text.slice(0, tokenMatch.index);
+                    // Token span
+                    const tokenSpan = document.createElement("span");
+                    tokenSpan.textContent = tokenMatch[0];
+                    mirror.appendChild(before);
+                    mirror.appendChild(tokenSpan);
+                    document.body.appendChild(mirror);
+                    mirror.style.left = fr.left + "px";
+                    mirror.style.top = fr.top + "px";
+                    const spanRect = tokenSpan.getBoundingClientRect();
+                    document.body.removeChild(mirror);
+                    return (
+                      <div style={{ position:"fixed", left:spanRect.left-2, top:spanRect.top-2, width:spanRect.width+4, height:spanRect.height+4, borderRadius:3, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.2)", zIndex:401, pointerEvents:"none" }}/>
+                    );
+                  }
+                }
                 return (
-                  <>
-                    <div style={{ position:"fixed", left:fr.left-2, top:fr.top-2, width:fr.width+4, height:fr.height+4, borderRadius:6, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.15)", zIndex:401, pointerEvents:"none" }}/>
-                    {step.showPillBadge && (
-                      <div style={{ position:"fixed", left:fr.left+8, top:fr.top+8, zIndex:402, pointerEvents:"none" }}>
-                        <div style={{ background:"#f59e0b", color:"white", fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>← pill token: {{value|option2|...}}</div>
-                      </div>
-                    )}
-                  </>
+                  <div style={{ position:"fixed", left:fr.left-2, top:fr.top-2, width:fr.width+4, height:fr.height+4, borderRadius:6, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.15)", zIndex:401, pointerEvents:"none" }}/>
                 );
               })()}
             </> : <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>}
