@@ -321,22 +321,22 @@ const MANAGE_TOUR_STEPS = [
     expandGroup:"Fe/TIBC/Ferr", showEditArrow:true, tooltipSide:"right" },
   { ref:"mIronEditForm",   title:"Snippet name",
     body:"The trigger name appears in the left column and in triggered pills. Rename it to match your preferred terminology.",
-    openEdit:true, highlightField:"mTriggerField", tooltipSide:"left" },
+    openEdit:true, highlightField:"mTriggerField", tooltipSide:"left", scrollToForm:"mIronEditForm" },
   { ref:"mIronEditForm",   title:"Voice synonyms",
     body:"Add alternate phrases here — one per line — so various spoken phrases will all trigger this snippet.",
-    highlightField:"mSynonymsField", tooltipSide:"left" },
+    highlightField:"mSynonymsField", tooltipSide:"left", scrollToForm:"mIronEditForm" },
   { ref:"mIronEditForm",   title:"Patient-facing text",
     body:"This is the text that drops into your note. Edit it to match your preferred wording and style.",
-    highlightField:"mTextField", tooltipSide:"left" },
+    highlightField:"mTextField", tooltipSide:"left", scrollToForm:"mIronEditForm" },
   { ref:"mIronEditForm",   title:"Clinician action items",
     body:"These reminders queue up in the Clinician To Do panel — a task list to ensure you follow through on what you're telling your patient.",
-    highlightField:"mActionsField", tooltipSide:"left" },
+    highlightField:"mActionsField", tooltipSide:"left", scrollToForm:"mIronEditForm" },
   { ref:"mIronEditForm",   title:"Staff action items",
     body:"These queue up in the Staff To Do panel so you can easily copy and paste them into a staff message.",
-    highlightField:"mStaffField", tooltipSide:"left" },
+    highlightField:"mStaffField", tooltipSide:"left", scrollToForm:"mIronEditForm" },
   { ref:"mTransEditForm",  title:"Selection pills in snippets",
     body:"You can include selection pills to adjust time intervals or messaging inline. The first option is the default — it populates your note automatically. Click a pill to change the selection.",
-    switchToTransaminitis:true, highlightField:"mPillInText", tooltipSide:"left" },
+    switchToTransaminitis:true, highlightField:"mPillInText", showPillBadge:true, tooltipSide:"left" },
   { ref:"mTransEditForm",  title:"Insert a selection pill",
     body:"Position your cursor in the patient text field, then click Insert selection pill to choose a pill from your library and embed it at the cursor position.",
     highlightField:"mInsertPillBtn", tooltipSide:"left" },
@@ -819,6 +819,14 @@ export default function App() {
 
     // closeAddCustom
     if (step.closeAddCustom) setShowAddCustom(false);
+
+    // scrollToForm: scroll a form element into center view
+    if (step.scrollToForm) {
+      setTimeout(() => {
+        const el = tourRefs.current[step.scrollToForm];
+        if (el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+      }, 200);
+    }
 
     // scrollToTop: scroll page to top so element is visible
     if (step.scrollToTop) {
@@ -1480,7 +1488,7 @@ export default function App() {
           {/* Snippets accordion — alphabetical in manage */}
           {getGroupsOrdered(snippets, null).map(({ name, snippets: gSnippets }) => (
             <div key={name} ref={el => { if(name==="Fe/TIBC/Ferr") tourRefs.current.mIronGroup=el; }} style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"0.75rem", overflow:"hidden" }}>
-              <button onClick={() => toggleManage(name)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 18px", background: manageOpen[name]?"#eff6ff":"white", border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a" }}>
+              <button onClick={() => toggleManage(name)} data-manage-arrow={name} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 18px", background: manageOpen[name]?"#eff6ff":"white", border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a" }}>
                 <span>{GROUP_DISPLAY[name] || name}</span>
                 <span style={{ fontSize:11, color:"#93c5fd", transform: manageOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s" }}>▼</span>
               </button>
@@ -1921,12 +1929,17 @@ export default function App() {
               <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
               {/* Spotlight ring */}
               <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height, borderRadius:10, boxShadow:"0 0 0 3px #7c3aed, 0 0 0 5px rgba(124,58,237,0.3)", zIndex:400, pointerEvents:"none" }}/>
-              {/* Expand arrow indicator — badge to left of the ▼ arrow */}
-              {step.showArrow && rect && (
-                <div style={{ position:"fixed", right: ww - rect.right + rect.width + 8, top: rect.top + rect.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
-                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand →</div>
-                </div>
-              )}
+              {/* Expand arrow indicator — badge just left of the ▼ arrow, inside spotlight */}
+              {step.showArrow && rect && (() => {
+                // Find the ▼ arrow button for Iron studies in manage tab
+                const arrowEl = document.querySelector('[data-manage-arrow="Fe/TIBC/Ferr"]');
+                const ar = arrowEl ? arrowEl.getBoundingClientRect() : rect;
+                return (
+                  <div style={{ position:"fixed", left: ar.left - 110, top: ar.top + ar.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
+                    <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand →</div>
+                  </div>
+                );
+              })()}
               {/* Edit button arrow indicator */}
               {step.showEditArrow && (() => {
                 const editEl = tourRefs.current.mEditBtn;
@@ -1941,7 +1954,14 @@ export default function App() {
               {fieldEl && (() => {
                 const fr = fieldEl.getBoundingClientRect();
                 return (
-                  <div style={{ position:"fixed", left:fr.left-2, top:fr.top-2, width:fr.width+4, height:fr.height+4, borderRadius:6, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.15)", zIndex:401, pointerEvents:"none" }}/>
+                  <>
+                    <div style={{ position:"fixed", left:fr.left-2, top:fr.top-2, width:fr.width+4, height:fr.height+4, borderRadius:6, border:"2px solid #f59e0b", boxShadow:"0 0 0 3px rgba(245,158,11,0.15)", zIndex:401, pointerEvents:"none" }}/>
+                    {step.showPillBadge && (
+                      <div style={{ position:"fixed", left:fr.left+8, top:fr.top+8, zIndex:402, pointerEvents:"none" }}>
+                        <div style={{ background:"#f59e0b", color:"white", fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>← pill token: {{value|option2|...}}</div>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
             </> : <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>}
