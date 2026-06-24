@@ -294,6 +294,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("compose");
   const [triggered, setTriggered] = useState([]);
   const [isListening, setIsListening] = useState(false);
+  const micTimeoutRef = useRef(null);
   const [matchStatus, setMatchStatus] = useState(null);
   const [copied, setCopied] = useState(false);
   const [staffCopied, setStaffCopied] = useState(false);
@@ -309,12 +310,25 @@ export default function App() {
     let last = 0, m;
     while ((m = re.exec(text)) !== null) {
       if (m.index > last) parts.push({ type:"text", value: text.slice(last, m.index) });
-      const opts = m[1].split("|");
-      parts.push({ type:"picklist", options: opts, defaultValue: opts[0] });
+      const rawOpts = m[1].split("|");
+      const defaultValue = rawOpts[0];
+      // Sort options by duration for display, keeping default value independent
+      const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
+      parts.push({ type:"picklist", options: sorted, defaultValue });
       last = m.index + m[0].length;
     }
     if (last < text.length) parts.push({ type:"text", value: text.slice(last) });
     return parts;
+  };
+
+  // Parse a duration string to a comparable number of days
+  const parseDuration = (s) => {
+    const n = (str, unit) => { const m = str.match(/(\d+)(?:[\s–-]+(\d+))?\s*/ + unit); if (!m) return null; return m[2] ? (parseInt(m[1])+parseInt(m[2]))/2 : parseInt(m[1]); };
+    const days = n(s, "days?"); if (days !== null) return days;
+    const weeks = n(s, "weeks?"); if (weeks !== null) return weeks * 7;
+    const months = n(s, "months?"); if (months !== null) return months * 30;
+    const years = n(s, "years?"); if (years !== null) return years * 365;
+    return 0;
   };
 
   // Resolve a line's text with picklist selections applied (for copy)
@@ -522,10 +536,23 @@ export default function App() {
     };
     recognition.onend = () => { if (!continuousRef.current) setIsListening(false); };
     recognition.start();
+    // Auto-stop after 5 minutes to avoid wasting API tokens
+    if (micTimeoutRef.current) clearTimeout(micTimeoutRef.current);
+    micTimeoutRef.current = setTimeout(() => {
+      continuousRef.current = false;
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      setMatchStatus({ text:"Microphone auto-stopped after 5 minutes", type:"nomatch" });
+      setTimeout(() => setMatchStatus(null), 3000);
+    }, 5 * 60 * 1000);
   }, [doClassify]);
 
   const stopListening = useCallback(() => {
-    continuousRef.current = false; recognitionRef.current?.stop(); setIsListening(false); setMatchStatus(null);
+    continuousRef.current = false;
+    recognitionRef.current?.stop();
+    setIsListening(false);
+    setMatchStatus(null);
+    if (micTimeoutRef.current) { clearTimeout(micTimeoutRef.current); micTimeoutRef.current = null; }
   }, []);
 
   // ── Trigger actions ───────────────────────────────────────────────────────
@@ -629,6 +656,7 @@ export default function App() {
   };
 
   const copyNote = () => {
+    if (isListening) stopListening();
     navigator.clipboard.writeText(fullNote).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -1075,39 +1103,40 @@ export default function App() {
           {/* RIGHT COLUMN */}
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {/* Clinician To Do */}
-            <div ref={el => tourRefs.current.clinicianTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+            <div ref={el => tourRefs.current.clinicianTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow: allClinicianActions.length > 0 ? "0 1px 3px rgba(0,0,0,0.08), 0 0 0 2px #fde68a" : "0 1px 3px rgba(0,0,0,0.08)", transition:"box-shadow 0.3s" }}>
               <div style={{ marginBottom:12 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-                  <span style={{ width:8, height:8, borderRadius:"50%", background:"#d97706", display:"inline-block", flexShrink:0 }}/>
-                  <span style={{ fontSize:12, fontWeight:500, color:"#92400e" }}>Clinician to do</span>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background: allClinicianActions.length > 0 ? "#d97706" : "#d1d5db", display:"inline-block", flexShrink:0, transition:"background 0.3s" }}/>
+                  <span style={{ fontSize:12, fontWeight:500, color: allClinicianActions.length > 0 ? "#92400e" : "#9ca3af", transition:"color 0.3s" }}>Clinician to do</span>
+                  {allClinicianActions.length > 0 && (
+                    <span style={{ marginLeft:"auto", fontSize:10, fontWeight:700, background:"#fef3c7", color:"#92400e", borderRadius:10, padding:"1px 7px", border:"1px solid #fde68a" }}>{allClinicianActions.length}</span>
+                  )}
                 </div>
                 <div style={{ fontSize:11, color:"#9ca3af", paddingLeft:14 }}>Lab orders · Rx · Referrals</div>
               </div>
               {allClinicianActions.length === 0
                 ? <div style={{ color:"#d1d5db", fontSize:12, fontStyle:"italic", textAlign:"center", padding:"1rem 0" }}>Clinician tasks appear here when relevant triggers are added</div>
-                : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                : <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                     {allClinicianActions.map((a, i) => (
-                      <label key={i} style={{ display:"flex", alignItems:"flex-start", gap:9, cursor:"pointer" }}>
-                        <input type="checkbox" checked={!!checkedActions[a]} onChange={() => setCheckedActions(p=>({...p,[a]:!p[a]}))} style={{ marginTop:2, accentColor:"#2563eb", width:14, height:14, flexShrink:0 }} />
-                        <span style={{ fontSize:12, lineHeight:1.5, color: checkedActions[a]?"#9ca3af":"#1f2937", textDecoration: checkedActions[a]?"line-through":"none" }}>{a}</span>
-                      </label>
+                      <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:8 }}>
+                        <span style={{ color:"#d97706", fontWeight:700, flexShrink:0, marginTop:1, fontSize:14 }}>•</span>
+                        <span style={{ fontSize:12, lineHeight:1.5, color:"#1f2937" }}>{a}</span>
+                      </div>
                     ))}
                   </div>
               }
-              {allClinicianActions.length > 0 && (
-                <div style={{ marginTop:12, paddingTop:12, borderTop:"1px solid #f3f4f6", fontSize:11, color:"#9ca3af" }}>
-                  {Object.values(checkedActions).filter(Boolean).length} of {allClinicianActions.length} completed
-                </div>
-              )}
             </div>
 
             {/* Staff To Do */}
-            <div ref={el => tourRefs.current.staffTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+            <div ref={el => tourRefs.current.staffTodo = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow: allStaffActions.length > 0 ? "0 1px 3px rgba(0,0,0,0.08), 0 0 0 2px #bfdbfe" : "0 1px 3px rgba(0,0,0,0.08)", transition:"box-shadow 0.3s" }}>
               <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12 }}>
                 <div>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-                    <span style={{ width:8, height:8, borderRadius:"50%", background:"#2563eb", display:"inline-block", flexShrink:0 }}/>
-                    <span style={{ fontSize:12, fontWeight:500, color:"#1e40af" }}>Staff to do</span>
+                    <span style={{ width:8, height:8, borderRadius:"50%", background: allStaffActions.length > 0 ? "#2563eb" : "#d1d5db", display:"inline-block", flexShrink:0, transition:"background 0.3s" }}/>
+                    <span style={{ fontSize:12, fontWeight:500, color: allStaffActions.length > 0 ? "#1e40af" : "#9ca3af", transition:"color 0.3s" }}>Staff to do</span>
+                    {allStaffActions.length > 0 && (
+                      <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background:"#dbeafe", color:"#1e40af", borderRadius:10, padding:"1px 7px", border:"1px solid #bfdbfe" }}>{allStaffActions.length}</span>
+                    )}
                   </div>
                   <div style={{ fontSize:11, color:"#9ca3af", paddingLeft:14 }}>Scheduling · Patient contact</div>
                 </div>
