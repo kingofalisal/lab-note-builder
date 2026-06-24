@@ -1800,27 +1800,34 @@ export default function App() {
         }
         const ww = window.innerWidth; const wh = window.innerHeight;
 
-        // Smart tooltip positioning
-        const tipW = 300; const tipH = 210;
+        // Smart tooltip positioning — avoid overlapping spotlight
+        const tipW = 300; const tipH = 220;
         let tipLeft, tipTop;
-
-        if (step.tooltipRight && hl) {
-          // Place tooltip to the right of the spotlight (step 3 - left column)
-          tipLeft = Math.min(hl.left + hl.width + 16, ww - tipW - 8);
-          const rawTop = hl.top;
-          tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
-        } else if (hl) {
-          const belowTop = hl.top + hl.height + 12;
-          const aboveTop = hl.top - tipH - 12;
-          const fitsBelow = belowTop + tipH <= wh - 8;
-          const fitsAbove = aboveTop >= 8;
-          const rawTop = fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop);
-          tipTop = Math.max(8, Math.min(rawTop, wh - tipH - 8));
-          tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
-        } else {
-          tipLeft = ww/2 - tipW/2;
-          tipTop = wh/2 - tipH/2;
-        }
+        if (hl) {
+          const spaceRight = ww - (hl.left + hl.width);
+          const spaceLeft  = hl.left;
+          const spaceBelow = wh - (hl.top + hl.height);
+          const spaceAbove = hl.top;
+          const rightFits  = spaceRight >= tipW + 16;
+          const leftFits   = spaceLeft  >= tipW + 16;
+          const belowFits  = spaceBelow >= tipH + 16;
+          const aboveFits  = spaceAbove >= tipH + 16;
+          let side = step.tooltipRight ? "right" : (belowFits ? "below" : (aboveFits ? "above" : (rightFits ? "right" : "left")));
+          if (side === "right" && !rightFits) side = leftFits ? "left" : (belowFits ? "below" : "above");
+          if (side === "right") {
+            tipLeft = Math.min(hl.left + hl.width + 16, ww - tipW - 8);
+            tipTop  = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+          } else if (side === "left") {
+            tipLeft = Math.max(8, hl.left - tipW - 16);
+            tipTop  = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+          } else if (side === "above") {
+            tipTop  = Math.max(8, hl.top - tipH - 12);
+            tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+          } else {
+            tipTop  = Math.min(hl.top + hl.height + 12, wh - tipH - 8);
+            tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+          }
+        } else { tipLeft = ww/2 - tipW/2; tipTop = wh/2 - tipH/2; }
 
         const overlayColor = "rgba(0,0,0,0.52)";
         return (
@@ -1907,21 +1914,41 @@ export default function App() {
         const pad = 8;
         const hl = rect ? { left: rect.left-pad, top: rect.top-pad, width: rect.width+pad*2, height: rect.height+pad*2 } : null;
         const ww = window.innerWidth; const wh = window.innerHeight;
-        const tipW = 300; const tipH = 210;
+        // Smart tooltip positioning — avoid overlapping spotlight
+        const tipW = 300; const tipH = 220;
         let tipLeft, tipTop;
-        if (step.tooltipSide === "right" && hl) {
-          tipLeft = Math.min(hl.left + hl.width + 12, ww - tipW - 8);
-          tipTop = Math.max(8, Math.min(hl.top, wh - tipH - 8));
-        } else if (step.tooltipSide === "left" && hl) {
-          tipLeft = Math.max(8, hl.left - tipW - 12);
-          tipTop = Math.max(8, Math.min(hl.top, wh - tipH - 8));
-        } else if (hl) {
-          const belowTop = hl.top + hl.height + 12;
-          const aboveTop = hl.top - tipH - 12;
-          const fitsBelow = belowTop + tipH <= wh - 8;
-          const fitsAbove = aboveTop >= 8;
-          tipTop = Math.max(8, Math.min(fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop), wh - tipH - 8));
-          tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+        if (hl) {
+          // Determine best side based on step hint and available space
+          const spaceRight  = ww - (hl.left + hl.width);
+          const spaceLeft   = hl.left;
+          const spaceBelow  = wh - (hl.top + hl.height);
+          const spaceAbove  = hl.top;
+          const wantSide = step.tooltipSide; // "left"|"right"|undefined
+
+          // Check if preferred side fits
+          const rightFits  = spaceRight  >= tipW + 16;
+          const leftFits   = spaceLeft   >= tipW + 16;
+          const belowFits  = spaceBelow  >= tipH + 16;
+          const aboveFits  = spaceAbove  >= tipH + 16;
+
+          let side = wantSide;
+          if (side === "right" && !rightFits) side = leftFits ? "left" : (belowFits ? "below" : "above");
+          if (side === "left"  && !leftFits)  side = rightFits ? "right" : (belowFits ? "below" : "above");
+          if (!side) side = belowFits ? "below" : (aboveFits ? "above" : (rightFits ? "right" : "left"));
+
+          if (side === "right") {
+            tipLeft = Math.min(hl.left + hl.width + 12, ww - tipW - 8);
+            tipTop  = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+          } else if (side === "left") {
+            tipLeft = Math.max(8, hl.left - tipW - 12);
+            tipTop  = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+          } else if (side === "above") {
+            tipTop  = Math.max(8, hl.top - tipH - 12);
+            tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+          } else { // below
+            tipTop  = Math.min(hl.top + hl.height + 12, wh - tipH - 8);
+            tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+          }
         } else { tipLeft = ww/2 - tipW/2; tipTop = wh/2 - tipH/2; }
         const overlayColor = "rgba(0,0,0,0.52)";
         return (
@@ -1933,13 +1960,13 @@ export default function App() {
               <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
               {/* Spotlight ring */}
               <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height, borderRadius:10, boxShadow:"0 0 0 3px #7c3aed, 0 0 0 5px rgba(124,58,237,0.3)", zIndex:400, pointerEvents:"none" }}/>
-              {/* Expand arrow indicator — badge just left of the ▼ arrow, inside spotlight */}
+              {/* Expand arrow indicator — badge just left of the ▼, using group button rect */}
               {step.showArrow && rect && (() => {
-                // Find the ▼ arrow button for Iron studies in manage tab
-                const arrowEl = document.querySelector('[data-manage-arrow="Fe/TIBC/Ferr"]');
-                const ar = arrowEl ? arrowEl.getBoundingClientRect() : rect;
+                // ▼ arrow is at right edge of the group button (rect)
+                const arrowX = rect.right - 30; // approx position of ▼ within button
+                const arrowY = rect.top + rect.height / 2;
                 return (
-                  <div style={{ position:"fixed", left: ar.left - 110, top: ar.top + ar.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
+                  <div style={{ position:"fixed", left: arrowX - 118, top: arrowY - 11, zIndex:401, pointerEvents:"none" }}>
                     <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand →</div>
                   </div>
                 );
