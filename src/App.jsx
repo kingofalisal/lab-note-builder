@@ -351,15 +351,16 @@ const MANAGE_TOUR_STEPS = [
     openPillLibrary:true, openNewPill:true, tooltipSide:"left" },
   { ref:"mDeleteBtn",      title:"Delete snippets",
     body:"Delete any snippets you don't need. Deleted snippets can be restored later from the toolbar using Restore deleted triggers.",
-    closePillLibrary:true },
+    closePillLibrary:true, scrollToForm:"mDeleteBtn" },
   { ref:"mAddCustomBtn",   title:"Add your own content",
-    body:"Click Add custom trigger to create your own snippets — trigger phrase, synonyms, patient text, actions, and lab group." },
+    body:"Click Add custom trigger to create your own snippets — trigger phrase, synonyms, patient text, actions, and lab group.",
+    scrollToForm:"mAddCustomBtn" },
   { ref:"mAddCustomModal", title:"Create a custom snippet",
     body:"Fill in the trigger phrase, voice synonyms, patient-facing text, and any clinician or staff actions. Add it to an existing lab group or create a new one.",
     openAddCustom:true, tooltipSide:"right" },
   { ref:"mExportBtn",      title:"Export your customizations",
     body:"Export your customizations as a file to share with colleagues or import onto another computer. All your edits, group order, and selection pills are included.",
-    closeAddCustom:true },
+    closeAddCustom:true, scrollToForm:"mExportBtn" },
 ];
 
 // ── Main Component ─────────────────────────────────────────────────────────────
