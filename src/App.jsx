@@ -1739,6 +1739,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
