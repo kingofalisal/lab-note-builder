@@ -757,9 +757,9 @@ export default function App() {
   };
   const handleEmailExport = () => {
     handleDownload();
-    setTimeout(() => {
-      window.location.href = `mailto:${exportEmail}?subject=${encodeURIComponent("Lab Note Builder – My Customizations")}&body=${encodeURIComponent("Your Lab Note Builder customizations file has been downloaded to your device.\n\nPlease attach the file \"lab-note-customizations.json\" to this email and send it to yourself.")}`;
-    }, 500);
+    const subject = encodeURIComponent("Lab Note Builder – My Customizations");
+    const body = encodeURIComponent("Your Lab Note Builder customizations file has been downloaded to your device.\n\nPlease attach the file \"lab-note-customizations.json\" to this email and send it to yourself.");
+    setTimeout(() => { window.location.href = `mailto:${exportEmail}?subject=${subject}&body=${body}`; }, 500);
   };
   const handleImportFile = (file) => {
     const reader = new FileReader();
