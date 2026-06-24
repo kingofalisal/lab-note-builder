@@ -993,7 +993,7 @@ export default function App() {
                                   const isOpen = openPicklist === key;
                                   return (
                                     <span key={si} style={{ position:"relative", display:"inline-block" }}>
-                                      <button onClick={() => setOpenPicklist(isOpen ? null : key)}
+                                      <button onClick={(e) => { e.stopPropagation(); setOpenPicklist(isOpen ? null : key); }}
                                         style={{ display:"inline-flex", alignItems:"center", gap:3, background:"#dbeafe", color:"#1e40af", border:"1.5px solid #93c5fd", borderRadius:5, padding:"1px 8px", fontSize:12, fontWeight:600, cursor:"pointer", lineHeight:1.6, verticalAlign:"middle" }}>
                                         {selected}
                                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1001,7 +1001,7 @@ export default function App() {
                                       {isOpen && (
                                         <div style={{ position:"absolute", top:"calc(100% + 2px)", left:0, background:"white", border:"1px solid #93c5fd", borderRadius:7, boxShadow:"0 4px 16px rgba(0,0,0,0.12)", zIndex:60, minWidth:110, overflow:"hidden" }}>
                                           {seg.options.map(opt => (
-                                            <button key={opt} onClick={() => { setPicklistSelections(p=>({...p,[key]:opt})); setOpenPicklist(null); }}
+                                            <button key={opt} onClick={(e) => { e.stopPropagation(); setPicklistSelections(p=>({...p,[key]:opt})); setOpenPicklist(null); }}
                                               style={{ display:"block", width:"100%", textAlign:"left", padding:"6px 12px", background: opt===selected?"#eff6ff":"white", color: opt===selected?"#1e40af":"#1f2937", border:"none", cursor:"pointer", fontSize:12, fontWeight: opt===selected?600:400 }}
                                               onMouseEnter={e=>{ if(opt!==selected) e.currentTarget.style.background="#f0f9ff"; }}
                                               onMouseLeave={e=>{ if(opt!==selected) e.currentTarget.style.background="white"; }}>
