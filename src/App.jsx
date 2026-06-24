@@ -24,20 +24,20 @@ const GROUP_DEFAULT_ID = {
   "Testosterone":   "testosterone_normal",
   "Uric acid":      "uric_acid_normal",
   "Urinalysis":     "ua_normal",
-  "Urine Culture":  "ucx_negative",
+  "Urine culture":  "ucx_negative",
 };
 
 // Display abbreviations for left column labels
 // Full display names for groups whose internal key differs from display preference
 const GROUP_DISPLAY = {
-  "Fe/TIBC/Ferr": "Iron studies",
+  "Fe/TIBC/Ferr": "Iron Studies",
 };
 
 // Abbreviations used only when column is narrow
 const GROUP_ABBREV = {
   "Microalbumin":   "Microalb",
   "Lipoprotein(a)": "Lp(a)",
-  "Urine Culture":  "Urine Cx",
+  "Urine culture":  "Urine Cx",
   "Testosterone":   "Testost",
   "Urinalysis":     "UA",
   "Vitamin B12":    "Vit B12",
@@ -110,9 +110,9 @@ const DEFAULT_SNIPPETS = [
   { id:"ua_normal", group:"Urinalysis", trigger:"Urinalysis normal", synonyms:["urine test normal","urinalysis fine","UA normal"], text:"Your urine test is normal.", clinicianActions:[], staffActions:[] },
   { id:"ua_blood_new", group:"Urinalysis", trigger:"Blood in urine new", synonyms:["new blood in urine","hematuria new","new hematuria"], text:"Your urine test shows blood, which needs further evaluation. Blood in the urine can have many causes, most of which are not serious, but it is important to investigate. I've ordered some repeat lab tests for you to complete prior to a follow-up visit. I've asked my staff to schedule a visit with me in the next few weeks to discuss further.", clinicianActions:["Order repeat UA and additional hematuria workup labs"], staffActions:["Schedule visit with me within 4 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
   { id:"ua_protein", group:"Urinalysis", trigger:"Protein in urine", synonyms:["proteinuria","protein in urine","urine protein elevated"], text:"Your urine test shows protein, which can be an early sign of kidney stress. I've ordered some repeat lab tests for you to complete in about 4 weeks. I've asked my staff to schedule a visit with me to review results and discuss further.", clinicianActions:["Order repeat UA and microalbumin/creatinine ratio in ~4 weeks"], staffActions:["Schedule visit with me within 4–6 weeks (video or in-office). Remind patient to complete labs at least 3 days before appointment."] },
-  { id:"ucx_negative", group:"Urine Culture", trigger:"Urine culture negative", synonyms:["urine culture negative","no bacteria in urine","urine culture clear"], text:"Your urine culture is negative, meaning no bacteria were found. If you have any ongoing urinary symptoms, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
-  { id:"ucx_positive_correct_abx", group:"Urine Culture", trigger:"Urine culture positive – on correct antibiotic", synonyms:["urine culture positive correct antibiotic","UTI on right antibiotic","urine culture positive treated correctly"], text:"Your urine culture shows an infection that should be well treated by the antibiotic you were given. Your symptoms should improve within the next 2–3 days. If your symptoms are not improving or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
-  { id:"ucx_positive_new_abx", group:"Urine Culture", trigger:"Urine culture positive – needs new antibiotic", synonyms:["urine culture positive needs different antibiotic","UTI wrong antibiotic","urine culture resistant needs new treatment"], text:"Your urine culture shows an infection. I am sending in an antibiotic that should treat this infection well. Please start taking it as soon as possible and complete the full course as directed. Your symptoms should improve within 2–3 days of starting. If they do not improve or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:["Prescribe targeted antibiotic per culture sensitivities"], staffActions:[] },
+  { id:"ucx_negative", group:"Urine culture", trigger:"Urine culture negative", synonyms:["urine culture negative","no bacteria in urine","urine culture clear"], text:"Your urine culture is negative, meaning no bacteria were found. If you have any ongoing urinary symptoms, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
+  { id:"ucx_positive_correct_abx", group:"Urine culture", trigger:"Urine culture positive – on correct antibiotic", synonyms:["urine culture positive correct antibiotic","UTI on right antibiotic","urine culture positive treated correctly"], text:"Your urine culture shows an infection that should be well treated by the antibiotic you were given. Your symptoms should improve within the next 2–3 days. If your symptoms are not improving or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:[], staffActions:[] },
+  { id:"ucx_positive_new_abx", group:"Urine culture", trigger:"Urine culture positive – needs new antibiotic", synonyms:["urine culture positive needs different antibiotic","UTI wrong antibiotic","urine culture resistant needs new treatment"], text:"Your urine culture shows an infection. I am sending in an antibiotic that should treat this infection well. Please start taking it as soon as possible and complete the full course as directed. Your symptoms should improve within 2–3 days of starting. If they do not improve or get worse, please contact my office to schedule a follow-up visit.", clinicianActions:["Prescribe targeted antibiotic per culture sensitivities"], staffActions:[] },
 ];
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
@@ -262,8 +262,8 @@ const TOUR_STEPS = [
   { ref:"cbcSection",    inHeader:false, title:"Expand for abnormals",
     body:"Click the ▼ arrow to expand a lab and see abnormal options. Here we've added 'Mild anemia needs labs.'",
     requireCompose:true, addSnippetId:"mild_anemia", expandGroup:"CBC" },
-  { ref:"wildcardRef",   inHeader:false, title:"Wildcard option",
-    body:"The wildcard option is a placeholder for free text comments. You can add your comments in the Patient note preview here or after pasting into your EMR.",
+  { ref:"wildcardRef",   inHeader:false, title:"Free text option",
+    body:"The free text option adds a placeholder for your own comments. Click the highlighted bullet in the Patient note preview to type directly, or add your text after pasting into your EMR.",
     requireCompose:true, expandGroup:"Microalbumin" },
   { ref:"dragHandle",    inHeader:false, title:"Reorder labs",
     body:"Grip the ⋮⋮ handle on the left of any lab row to rearrange the column. Your preferred order is saved automatically.",
@@ -284,6 +284,27 @@ const TOUR_STEPS = [
     body:"Click Manage Snippets to edit any response, add your own labs and triggers, delete defaults you don't need, or import/export your customizations.",
     requireCompose:false },
 ];
+
+// ── Picklist Library ──────────────────────────────────────────────────────────
+const DEFAULT_PICKLIST_LIBRARY = [
+  { id:"pl_followup", name:"Follow-up interval", defaultValue:"1 month", options:["1 month","2 months","3 months","6 months"] },
+  { id:"pl_labcheck", name:"Lab recheck interval", defaultValue:"1 month", options:["1 week","2 weeks","1 month","2 months","3 months","6 months"] },
+  { id:"pl_visittype", name:"Visit type", defaultValue:"video or office visit", options:["office visit","video visit","video or office visit"] },
+];
+
+function loadPicklistLibrary() {
+  try {
+    const s = localStorage.getItem("lab_picklist_library_v1");
+    if (!s) return DEFAULT_PICKLIST_LIBRARY;
+    const saved = JSON.parse(s);
+    // Merge: keep saved entries, add any new defaults not present
+    const ids = saved.map(p => p.id);
+    const merged = [...saved];
+    DEFAULT_PICKLIST_LIBRARY.forEach(def => { if (!ids.includes(def.id)) merged.push(def); });
+    return merged;
+  } catch { return DEFAULT_PICKLIST_LIBRARY; }
+}
+function savePicklistLibrary(lib) { localStorage.setItem("lab_picklist_library_v1", JSON.stringify(lib)); }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function App() {
@@ -381,6 +402,11 @@ export default function App() {
   const [phiChecked, setPhiChecked] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [picklistLibrary, setPicklistLibrary] = useState(() => loadPicklistLibrary());
+  const [showPicklistLib, setShowPicklistLib] = useState(false);
+  const [editingPillId, setEditingPillId] = useState(null);
+  const [pillEditState, setPillEditState] = useState(null); // {name, defaultValue, options:[]}
+  const [showInsertPill, setShowInsertPill] = useState(null); // snippetId being edited when inserting
   const devMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("devmode") === "true";
   const recognitionRef = useRef(null);
   const matchTimerRef = useRef(null);
@@ -479,7 +505,7 @@ export default function App() {
       const entry = byGroup[g];
       if (!entry) return;
       entry.normal.forEach(s => lines.push({ id: s.id, text: s.text }));
-      entry.wildcards.forEach(s => lines.push({ id: s.id, text: s.text }));
+      entry.wildcards.forEach(s => lines.push({ id: s.id, text: s.text, isFreeText: true, group: g }));
     });
     return lines;
   })();
@@ -637,7 +663,7 @@ export default function App() {
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
-    const wc = { id: wcId, group, trigger:`${group} wildcard`, text:`${group}: ***`, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
+    const wc = { id: wcId, group, trigger:`${group} free text`, text:`${group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
     setSnippets(prev => [...prev, wc]);
     setTriggered(prev => [...prev, wcId]);
   };
@@ -716,7 +742,12 @@ export default function App() {
   // ── Export / Import ───────────────────────────────────────────────────────
   const exportData = () => {
     const custom = snippets.filter(s => isCustomized(s));
-    return JSON.stringify({ snippets: custom, headerFooter: hf, deletedIds, groupOrder: groupOrder || [] }, null, 2);
+    const customPills = picklistLibrary.filter(p => {
+      const def = DEFAULT_PICKLIST_LIBRARY.find(d => d.id === p.id);
+      if (!def) return true; // custom pill
+      return JSON.stringify(def) !== JSON.stringify(p);
+    });
+    return JSON.stringify({ snippets: custom, headerFooter: hf, deletedIds, groupOrder: groupOrder || [], picklistLibrary: customPills }, null, 2);
   };
   const handleDownload = () => {
     const blob = new Blob([exportData()], { type:"application/json" });
@@ -725,7 +756,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
   const handleEmailExport = () => {
-    window.location.href = `mailto:${exportEmail}?subject=${encodeURIComponent("Lab Note Builder – My Customizations")}&body=${encodeURIComponent("My Lab Note Builder customizations are attached.")}`;
+    handleDownload();
+    setTimeout(() => {
+      window.location.href = `mailto:${exportEmail}?subject=${encodeURIComponent("Lab Note Builder – My Customizations")}&body=${encodeURIComponent("Your Lab Note Builder customizations file has been downloaded to your device.\n\nPlease attach the file \"lab-note-customizations.json\" to this email and send it to yourself.")}`;
+    }, 500);
   };
   const handleImportFile = (file) => {
     const reader = new FileReader();
@@ -744,6 +778,14 @@ export default function App() {
         if (data.headerFooter) { const newHf = { ...hf, ...data.headerFooter }; setHf(newHf); saveHeaderFooter(newHf); }
         if (data.deletedIds) { setDeletedIds(data.deletedIds); saveDeletedIds(data.deletedIds); }
         if (data.groupOrder) { setGroupOrder(data.groupOrder); saveGroupOrder(data.groupOrder); }
+        if (data.picklistLibrary) {
+          const merged = [...picklistLibrary];
+          data.picklistLibrary.forEach(imp => {
+            const idx = merged.findIndex(p => p.id === imp.id);
+            if (idx >= 0) merged[idx] = imp; else merged.push(imp);
+          });
+          setPicklistLibrary(merged); savePicklistLibrary(merged);
+        }
         setShowImport(false); alert("Import successful!");
       } catch { alert("Could not read file — make sure it is a valid export file."); }
     };
@@ -914,7 +956,7 @@ export default function App() {
                           ref={name === "Microalbumin" ? el => tourRefs.current.wildcardRef = el : null}
                           style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
                           onMouseEnter={e=>e.currentTarget.style.background="#ede9fe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                          + {name}: ***
+                          + {name}: ___
                         </button>
                       </div>
                     )}
@@ -1005,6 +1047,8 @@ export default function App() {
                     {noteLines.map((line, i) => {
                       const currentText = noteEdits[i] !== undefined ? noteEdits[i] : line.text;
                       const isEdited = noteEdits[i] !== undefined && noteEdits[i] !== line.text;
+                      const isFreeText = line.isFreeText;
+                      const isEmpty = isFreeText && currentText.trim() === (line.group ? `${line.group}: ` : "").trim() || (isFreeText && currentText.trim() === "");
                       const segments = parseTokens(currentText);
                       const hasPicklists = !isEdited && segments.some(s => s.type === "picklist");
                       return (
@@ -1048,16 +1092,17 @@ export default function App() {
                                 onChange={e => setNoteEdits(prev => ({ ...prev, [i]: e.target.value }))}
                                 style={{
                                   width:"100%", fontSize:13, lineHeight:1.6, color:"#1f2937",
-                                  border: isEdited ? "1px solid #bfdbfe" : "1px solid transparent",
+                                  border: isEmpty ? "1.5px dashed #f59e0b" : isEdited ? "1px solid #bfdbfe" : "1px solid transparent",
                                   borderRadius:6, padding:"3px 6px", resize:"none", fontFamily:"inherit",
-                                  background: isEdited ? "#f0f9ff" : "transparent",
+                                  background: isEmpty ? "#fffbeb" : isEdited ? "#f0f9ff" : "transparent",
                                   cursor:"text", overflow:"hidden", boxSizing:"border-box", minHeight:24,
                                 }}
+                                placeholder={isEmpty ? "Type your comment here…" : ""}
                                 rows={Math.max(1, Math.ceil(currentText.length / 72))}
                                 onFocus={e => { e.target.style.border="1px solid #93c5fd"; e.target.style.background="#f0f9ff"; }}
                                 onBlur={e => {
-                                  e.target.style.border = isEdited ? "1px solid #bfdbfe" : "1px solid transparent";
-                                  e.target.style.background = isEdited ? "#f0f9ff" : "transparent";
+                                  e.target.style.border = isEmpty ? "1.5px dashed #f59e0b" : isEdited ? "1px solid #bfdbfe" : "1px solid transparent";
+                                  e.target.style.background = isEmpty ? "#fffbeb" : isEdited ? "#f0f9ff" : "transparent";
                                 }}
                               />
                             )}
@@ -1216,6 +1261,7 @@ export default function App() {
           {/* Action buttons */}
           <div style={{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap" }}>
             <button onClick={() => setShowAddCustom(true)} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 14px", cursor:"pointer", fontWeight:500 }}>+ Add custom trigger</button>
+            <button onClick={() => setShowPicklistLib(true)} style={{ fontSize:12, background:"white", color:"#7c3aed", border:"1px solid #ddd6fe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>⊞ Manage selection pills</button>
             {deletedIds.length > 0 && (
               <button onClick={restoreDeleted} style={{ fontSize:12, background:"white", color:"#16a34a", border:"1px solid #bbf7d0", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>↩ Restore deleted triggers ({deletedIds.length})</button>
             )}
@@ -1254,7 +1300,13 @@ export default function App() {
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases that trigger this snippet — one per line)</div>
                           <textarea value={editSynonyms} onChange={e=>setEditSynonyms(e.target.value)} placeholder="e.g. thyroid normal no meds&#10;TSH fine" style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Patient-facing text</div>
-                          <textarea value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea id={`edit-textarea-${s.id}`} value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <div style={{ display:"flex", gap:6, marginTop:5, flexWrap:"wrap" }}>
+                            <button onClick={() => setShowInsertPill(s.id)} style={{ fontSize:11, color:"#7c3aed", background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>⊞ Insert selection pill</button>
+                            {/\{\{[^}]+\}\}/.test(editText) && (
+                              <button onClick={() => setEditText(editText.replace(/\{\{([^}|]+)\|[^}]*\}\}/g, '$1').replace(/\{\{([^}]+)\}\}/g, '$1'))} style={{ fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>✕ Remove all pills (keep defaults)</button>
+                            )}
+                          </div>
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line)</div>
                           <textarea value={editActions} onChange={e=>setEditActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line)</div>
@@ -1604,7 +1656,89 @@ export default function App() {
         );
       })()}
 
-      <style>{`
+      {/* ── MODAL: Picklist Library ── */}
+      {showPicklistLib && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200 }}>
+          <div style={{ background:"white", borderRadius:16, padding:"1.75rem", width:520, maxWidth:"95vw", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 12px 40px rgba(0,0,0,0.2)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:"#1e3a8a" }}>Selection pill library</div>
+              <button onClick={() => { setShowPicklistLib(false); setEditingPillId(null); setPillEditState(null); }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"#9ca3af" }}>×</button>
+            </div>
+            <div style={{ fontSize:12, color:"#6b7280", marginBottom:16 }}>Selection pills let you embed clickable options in snippet text. Changes here do not affect snippets already using a pill.</div>
+            {picklistLibrary.map(pill => (
+              <div key={pill.id} style={{ background:"#f8fafc", borderRadius:10, padding:"12px 14px", marginBottom:10, border:"1px solid #e5e7eb" }}>
+                {editingPillId === pill.id && pillEditState ? (
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:4 }}>Pill name</div>
+                    <input value={pillEditState.name} onChange={e => setPillEditState(p=>({...p,name:e.target.value}))} style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:6, padding:"6px 9px", boxSizing:"border-box", marginBottom:10 }} />
+                    <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:6 }}>Options <span style={{ color:"#9ca3af", fontWeight:400 }}>(↑↓ to reorder · ★ to set default)</span></div>
+                    {pillEditState.options.map((opt, oi) => (
+                      <div key={oi} style={{ display:"flex", gap:5, marginBottom:6, alignItems:"center" }}>
+                        <input value={opt} onChange={e => { const o=[...pillEditState.options]; o[oi]=e.target.value; setPillEditState(p=>({...p,options:o})); }} style={{ flex:1, fontSize:12, border:"1px solid #d1d5db", borderRadius:5, padding:"4px 8px" }} />
+                        <button onClick={() => { const o=[...pillEditState.options]; [o[oi],o[oi-1]]=[o[oi-1],o[oi]]; setPillEditState(p=>({...p,options:o})); }} disabled={oi===0} style={{ fontSize:11, padding:"3px 7px", border:"1px solid #e5e7eb", borderRadius:4, cursor:oi===0?"default":"pointer", color:oi===0?"#d1d5db":"#374151", background:"white" }}>↑</button>
+                        <button onClick={() => { const o=[...pillEditState.options]; [o[oi],o[oi+1]]=[o[oi+1],o[oi]]; setPillEditState(p=>({...p,options:o})); }} disabled={oi===pillEditState.options.length-1} style={{ fontSize:11, padding:"3px 7px", border:"1px solid #e5e7eb", borderRadius:4, cursor:oi===pillEditState.options.length-1?"default":"pointer", color:oi===pillEditState.options.length-1?"#d1d5db":"#374151", background:"white" }}>↓</button>
+                        <button onClick={() => setPillEditState(p=>({...p,defaultValue:opt}))} title="Set as default" style={{ fontSize:11, padding:"3px 7px", border:"1px solid #e5e7eb", borderRadius:4, cursor:"pointer", color:opt===pillEditState.defaultValue?"#7c3aed":"#9ca3af", background:opt===pillEditState.defaultValue?"#f5f3ff":"white" }}>★</button>
+                        <button onClick={() => { const o=pillEditState.options.filter((_,i)=>i!==oi); const dv=o.includes(pillEditState.defaultValue)?pillEditState.defaultValue:(o[0]||""); setPillEditState(p=>({...p,options:o,defaultValue:dv})); }} disabled={pillEditState.options.length<=1} style={{ fontSize:11, padding:"3px 7px", border:"1px solid #fee2e2", borderRadius:4, cursor:"pointer", color:"#dc2626", background:"white" }}>✕</button>
+                      </div>
+                    ))}
+                    <button onClick={() => setPillEditState(p=>({...p,options:[...p.options,""]}))} style={{ fontSize:11, color:"#7c3aed", background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:5, padding:"3px 10px", cursor:"pointer", marginBottom:10 }}>+ Add option</button>
+                    <div style={{ display:"flex", gap:7, marginTop:6 }}>
+                      <button onClick={() => { const updated=picklistLibrary.map(p=>p.id===pill.id?{...p,...pillEditState}:p); setPicklistLibrary(updated); savePicklistLibrary(updated); setEditingPillId(null); setPillEditState(null); }} style={{ fontSize:12, background:"#7c3aed", color:"white", border:"none", borderRadius:6, padding:"6px 14px", cursor:"pointer" }}>Save</button>
+                      <button onClick={() => { setEditingPillId(null); setPillEditState(null); }} style={{ fontSize:12, background:"none", color:"#6b7280", border:"1px solid #e5e7eb", borderRadius:6, padding:"6px 14px", cursor:"pointer" }}>Cancel</button>
+                      {!DEFAULT_PICKLIST_LIBRARY.find(d=>d.id===pill.id) && (
+                        <button onClick={() => { const updated=picklistLibrary.filter(p=>p.id!==pill.id); setPicklistLibrary(updated); savePicklistLibrary(updated); setEditingPillId(null); }} style={{ fontSize:12, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:6, padding:"6px 14px", cursor:"pointer", marginLeft:"auto" }}>Delete pill</button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:"#1e3a8a", marginBottom:4 }}>{pill.name}</div>
+                      <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                        {pill.options.map(opt => (
+                          <span key={opt} style={{ fontSize:11, background:opt===pill.defaultValue?"#ede9fe":"#f1f5f9", color:opt===pill.defaultValue?"#7c3aed":"#374151", border:`1px solid ${opt===pill.defaultValue?"#ddd6fe":"#e5e7eb"}`, borderRadius:12, padding:"2px 8px" }}>{opt}{opt===pill.defaultValue?" ★":""}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => { setEditingPillId(pill.id); setPillEditState({name:pill.name,defaultValue:pill.defaultValue,options:[...pill.options]}); }} style={{ fontSize:11, color:"#7c3aed", background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:5, padding:"3px 9px", cursor:"pointer", flexShrink:0, marginLeft:12 }}>Edit</button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <button onClick={() => { const newId=`pl_custom_${Date.now()}`; const newPill={id:newId,name:"New pill",defaultValue:"option 1",options:["option 1","option 2"]}; const updated=[...picklistLibrary,newPill]; setPicklistLibrary(updated); savePicklistLibrary(updated); setEditingPillId(newId); setPillEditState({name:"New pill",defaultValue:"option 1",options:["option 1","option 2"]}); }} style={{ width:"100%", fontSize:13, color:"#7c3aed", background:"#f5f3ff", border:"2px dashed #ddd6fe", borderRadius:8, padding:"9px", cursor:"pointer", marginTop:4 }}>+ Add new selection pill</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Insert pill into snippet ── */}
+      {showInsertPill && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:250 }}>
+          <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:400, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
+            <div style={{ fontSize:14, fontWeight:700, color:"#1e3a8a", marginBottom:6 }}>Insert selection pill</div>
+            <div style={{ fontSize:12, color:"#6b7280", marginBottom:14 }}>Position your cursor in the text field first, then click a pill to insert it at that position.</div>
+            {picklistLibrary.map(pill => (
+              <button key={pill.id} onClick={() => {
+                const ta = document.getElementById(`edit-textarea-${showInsertPill}`);
+                const token = `{{${[pill.defaultValue,...pill.options.filter(o=>o!==pill.defaultValue)].join("|")}}}`;
+                if (ta) {
+                  const start = ta.selectionStart ?? editText.length;
+                  const end = ta.selectionEnd ?? editText.length;
+                  setEditText(editText.slice(0,start) + token + editText.slice(end));
+                } else { setEditText(t => t + token); }
+                setShowInsertPill(null);
+              }} style={{ display:"block", width:"100%", textAlign:"left", padding:"10px 12px", marginBottom:8, background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:8, cursor:"pointer" }}>
+                <div style={{ fontSize:13, fontWeight:600, color:"#7c3aed", marginBottom:4 }}>{pill.name}</div>
+                <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                  {pill.options.map(opt => (
+                    <span key={opt} style={{ fontSize:11, background:opt===pill.defaultValue?"#ede9fe":"white", color:opt===pill.defaultValue?"#7c3aed":"#6b7280", border:"1px solid #e5e7eb", borderRadius:10, padding:"1px 7px" }}>{opt}{opt===pill.defaultValue?" (default)":""}</span>
+                  ))}
+                </div>
+              </button>
+            ))}
+            <button onClick={() => setShowInsertPill(null)} style={{ marginTop:6, fontSize:12, color:"#6b7280", background:"none", border:"1px solid #e5e7eb", borderRadius:6, padding:"6px 14px", cursor:"pointer" }}>Cancel</button>
+          </div>
+        </div>
+      )}
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         * { box-sizing:border-box; }
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
@@ -1617,3 +1751,4 @@ export default function App() {
     </div>
   );
 }
+
