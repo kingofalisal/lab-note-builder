@@ -663,7 +663,7 @@ export default function App() {
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
-    const wc = { id: wcId, group, trigger:`${group} free text`, text:`${group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
+    const wc = { id: wcId, group, trigger:`${group} free text`, text:`${GROUP_DISPLAY[group] || group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
     setSnippets(prev => [...prev, wc]);
     setTriggered(prev => [...prev, wcId]);
   };
@@ -956,7 +956,7 @@ export default function App() {
                           ref={name === "Microalbumin" ? el => tourRefs.current.wildcardRef = el : null}
                           style={{ width:"100%", textAlign:"left", padding:"6px 12px 6px 26px", background:"none", border:"none", cursor:"pointer", fontSize:11, color:"#6366f1", fontStyle:"italic", borderBottom:"1px solid #f1f5f9", transition:"background 0.15s" }}
                           onMouseEnter={e=>e.currentTarget.style.background="#ede9fe"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                          + {name}: ___
+                          + {GROUP_DISPLAY[name] || name}: ___
                         </button>
                       </div>
                     )}
@@ -1273,7 +1273,7 @@ export default function App() {
           {getGroupsOrdered(snippets, null).map(({ name, snippets: gSnippets }) => (
             <div key={name} style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"0.75rem", overflow:"hidden" }}>
               <button onClick={() => toggleManage(name)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 18px", background: manageOpen[name]?"#eff6ff":"white", border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a" }}>
-                <span>{name}</span>
+                <span>{GROUP_DISPLAY[name] || name}</span>
                 <span style={{ fontSize:11, color:"#93c5fd", transform: manageOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s" }}>▼</span>
               </button>
               {manageOpen[name] && (
