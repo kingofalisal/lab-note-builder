@@ -663,7 +663,7 @@ export default function App() {
 
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
-    const wc = { id: wcId, group, trigger:`${group} free text`, text:`${GROUP_DISPLAY[group] || group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
+    const wc = { id: wcId, group, trigger:`${GROUP_DISPLAY[group] || group} free text`, text:`${GROUP_DISPLAY[group] || group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
     setSnippets(prev => [...prev, wc]);
     setTriggered(prev => [...prev, wcId]);
   };
