@@ -30,7 +30,7 @@ const GROUP_DEFAULT_ID = {
 // Display abbreviations for left column labels
 // Full display names for groups whose internal key differs from display preference
 const GROUP_DISPLAY = {
-  "Fe/TIBC/Ferr": "Iron Studies",
+  "Fe/TIBC/Ferr": "Iron studies",
 };
 
 // Abbreviations used only when column is narrow
@@ -1746,7 +1746,7 @@ export default function App() {
         textarea:focus, input:focus { outline:none; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
         .trigger-row { position:relative; }
         .snippet-tooltip { display:none; position:absolute; left:100%; top:0; z-index:50; background:#1e3a8a; color:white; font-size:11px; line-height:1.5; padding:8px 12px; border-radius:8px; width:260px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.18); margin-left:8px; }
-        .lab-row:hover .snippet-tooltip { display:block; }
+        .lab-row:hover .snippet-tooltip, .trigger-row:hover .snippet-tooltip { display:block; }
         .note-bullet-row:hover .bullet-delete-btn { opacity:1 !important; }
       `}</style>
       </div>
