@@ -308,46 +308,47 @@ function savePicklistLibrary(lib) { localStorage.setItem("lab_picklist_library_v
 
 // ── Manage Snippets Tour Steps ────────────────────────────────────────────────
 // highlightField: ref key of field to give amber border highlight
-// tooltipSide: "right" places tooltip to right of spotlight (for modals)
+// tooltipSide: "right" | "left" | undefined (default = below/above)
+// scrollToTop: scroll page to top before rendering this step
 const MANAGE_TOUR_STEPS = [
   { ref:"mEditHf",         title:"Edit header & footer",
     body:"Customize the messages that start and end every lab result note. Click the Edit button to open the fields and save your changes." },
   { ref:"mIronGroup",      title:"Expand a lab group",
     body:"Click the ▼ arrow on any lab group to see its snippets. Try expanding Iron studies to see the available options.",
-    showArrow:true, collapsed:true },
+    showArrow:true, collapsed:true, tooltipSide:"right" },
   { ref:"mEditBtn",        title:"Edit a snippet",
     body:"Click the Edit button on any snippet to open the editing form and customize its content.",
-    expandGroup:"Fe/TIBC/Ferr", showEditArrow:true },
+    expandGroup:"Fe/TIBC/Ferr", showEditArrow:true, tooltipSide:"right" },
   { ref:"mIronEditForm",   title:"Snippet name",
     body:"The trigger name appears in the left column and in triggered pills. Rename it to match your preferred terminology.",
-    openEdit:true, highlightField:"mTriggerField" },
+    openEdit:true, highlightField:"mTriggerField", tooltipSide:"left" },
   { ref:"mIronEditForm",   title:"Voice synonyms",
     body:"Add alternate phrases here — one per line — so various spoken phrases will all trigger this snippet.",
-    highlightField:"mSynonymsField" },
+    highlightField:"mSynonymsField", tooltipSide:"left" },
   { ref:"mIronEditForm",   title:"Patient-facing text",
     body:"This is the text that drops into your note. Edit it to match your preferred wording and style.",
-    highlightField:"mTextField" },
+    highlightField:"mTextField", tooltipSide:"left" },
   { ref:"mIronEditForm",   title:"Clinician action items",
     body:"These reminders queue up in the Clinician To Do panel — a task list to ensure you follow through on what you're telling your patient.",
-    highlightField:"mActionsField" },
+    highlightField:"mActionsField", tooltipSide:"left" },
   { ref:"mIronEditForm",   title:"Staff action items",
     body:"These queue up in the Staff To Do panel so you can easily copy and paste them into a staff message.",
-    highlightField:"mStaffField" },
-  { ref:"mIronEditForm",   title:"Selection pills in snippets",
+    highlightField:"mStaffField", tooltipSide:"left" },
+  { ref:"mTransEditForm",  title:"Selection pills in snippets",
     body:"You can include selection pills to adjust time intervals or messaging inline. The first option is the default — it populates your note automatically. Click a pill to change the selection.",
-    switchToTransaminitis:true, highlightField:"mPillInText" },
-  { ref:"mIronEditForm",   title:"Insert a selection pill",
+    switchToTransaminitis:true, highlightField:"mPillInText", tooltipSide:"left" },
+  { ref:"mTransEditForm",  title:"Insert a selection pill",
     body:"Position your cursor in the patient text field, then click Insert selection pill to choose a pill from your library and embed it at the cursor position.",
-    highlightField:"mInsertPillBtn" },
+    highlightField:"mInsertPillBtn", tooltipSide:"left" },
   { ref:"mInsertPillModal",title:"Choose a pill to insert",
     body:"Select an existing selection pill from your library to insert it into the snippet text at the cursor position.",
     openInsertModal:true, tooltipSide:"right" },
   { ref:"mManagePillsBtn", title:"Manage selection pills",
     body:"Create your own selection pills with custom options and defaults. Click Manage selection pills to build your library.",
-    closeInsertModal:true },
+    closeInsertModal:true, scrollToTop:true },
   { ref:"mPillLibraryModal",title:"Build your pill library",
     body:"Add a new selection pill, name it, add options, reorder them with ↑↓, and click ★ to set your default selection.",
-    openPillLibrary:true, openNewPill:true },
+    openPillLibrary:true, openNewPill:true, tooltipSide:"left" },
   { ref:"mDeleteBtn",      title:"Delete snippets",
     body:"Delete any snippets you don't need. Deleted snippets can be restored later from the toolbar using Restore deleted triggers.",
     closePillLibrary:true },
@@ -818,6 +819,11 @@ export default function App() {
 
     // closeAddCustom
     if (step.closeAddCustom) setShowAddCustom(false);
+
+    // scrollToTop: scroll page to top so element is visible
+    if (step.scrollToTop) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     setTimeout(() => setManageTourRenderTick(n => n+1), 120);
   };
@@ -1490,7 +1496,7 @@ export default function App() {
                         )}
                       </div>
                       {editingId === s.id ? (
-                        <div ref={el => { if(s.id==="iron_normal") tourRefs.current.mIronEditForm=el; }} style={{ marginTop:10 }}>
+                        <div ref={el => { if(s.id==="iron_normal") tourRefs.current.mIronEditForm=el; if(s.id==="transaminitis_new") tourRefs.current.mTransEditForm=el; }} style={{ marginTop:10 }}>
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger name (shown in left column and triggered pills)</div>
                           <input ref={el => tourRefs.current.mTriggerField=el} value={editTrigger} onChange={e=>setEditTrigger(e.target.value)} style={{ width:"100%", fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases that trigger this snippet — one per line)</div>
@@ -1885,6 +1891,9 @@ export default function App() {
         let tipLeft, tipTop;
         if (step.tooltipSide === "right" && hl) {
           tipLeft = Math.min(hl.left + hl.width + 12, ww - tipW - 8);
+          tipTop = Math.max(8, Math.min(hl.top, wh - tipH - 8));
+        } else if (step.tooltipSide === "left" && hl) {
+          tipLeft = Math.max(8, hl.left - tipW - 12);
           tipTop = Math.max(8, Math.min(hl.top, wh - tipH - 8));
         } else if (hl) {
           const belowTop = hl.top + hl.height + 12;
