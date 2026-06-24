@@ -1048,7 +1048,8 @@ export default function App() {
                       const currentText = noteEdits[i] !== undefined ? noteEdits[i] : line.text;
                       const isEdited = noteEdits[i] !== undefined && noteEdits[i] !== line.text;
                       const isFreeText = line.isFreeText;
-                      const isEmpty = isFreeText && currentText.trim() === (line.group ? `${line.group}: ` : "").trim() || (isFreeText && currentText.trim() === "");
+                      const freeTextPrefix = isFreeText ? `${GROUP_DISPLAY[line.group] || line.group}: ` : "";
+                      const isEmpty = isFreeText && (currentText.trim() === freeTextPrefix.trim() || currentText.trim() === "");
                       const segments = parseTokens(currentText);
                       const hasPicklists = !isEdited && segments.some(s => s.type === "picklist");
                       return (
