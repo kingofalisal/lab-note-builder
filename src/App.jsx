@@ -825,6 +825,14 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    // scrollToTransaminitis: scroll Transaminitis new into center view
+    if (step.switchToTransaminitis) {
+      setTimeout(() => {
+        const el = tourRefs.current.mTransEditForm;
+        if (el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+      }, 200);
+    }
+
     setTimeout(() => setManageTourRenderTick(n => n+1), 120);
   };
 
@@ -1913,10 +1921,10 @@ export default function App() {
               <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
               {/* Spotlight ring */}
               <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height, borderRadius:10, boxShadow:"0 0 0 3px #7c3aed, 0 0 0 5px rgba(124,58,237,0.3)", zIndex:400, pointerEvents:"none" }}/>
-              {/* Expand arrow indicator */}
+              {/* Expand arrow indicator — badge to left of the ▼ arrow */}
               {step.showArrow && rect && (
-                <div style={{ position:"fixed", right: ww - rect.right + 8, top: rect.top + 10, zIndex:401, pointerEvents:"none" }}>
-                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand</div>
+                <div style={{ position:"fixed", right: ww - rect.right + rect.width + 8, top: rect.top + rect.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
+                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>click ▼ to expand →</div>
                 </div>
               )}
               {/* Edit button arrow indicator */}
