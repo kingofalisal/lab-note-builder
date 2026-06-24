@@ -306,6 +306,28 @@ function loadPicklistLibrary() {
 }
 function savePicklistLibrary(lib) { localStorage.setItem("lab_picklist_library_v1", JSON.stringify(lib)); }
 
+// ── Manage Snippets Tour Steps ────────────────────────────────────────────────
+const MANAGE_TOUR_STEPS = [
+  { ref:"mEditHf",       title:"Edit header & footer",         body:"Customize the messages that start and end every lab result note. Click the header or footer field to edit, then save." },
+  { ref:"mIronGroup",    title:"Expand a lab group",           body:"Click the arrow on any lab group to see its snippets. Here we've expanded Iron studies to show its options.", expandGroup:"Fe/TIBC/Ferr", showArrow:true },
+  { ref:"mIronGroup",    title:"Iron studies options",         body:"Each expanded group shows all available snippets. Click a snippet name to expand it further and see its content." },
+  { ref:"mEditBtn",      title:"Edit a snippet",               body:"Click the Edit button on any snippet to open the edit form and customize its content." },
+  { ref:"mTriggerField", title:"Snippet name",                 body:"The trigger name is what appears in the left column and in triggered pills. Rename it to match your preferred terminology.", openEdit:true },
+  { ref:"mSynonymsField",title:"Voice synonyms",               body:"Add alternate phrases here — one per line — so various ways of saying the same thing will all trigger this snippet." },
+  { ref:"mTextField",    title:"Patient-facing text",          body:"This is the text that drops into your note. Edit it to match your preferred wording and style." },
+  { ref:"mActionsField", title:"Clinician action items",       body:"These reminders queue up in the Clinician To Do panel — a task list to ensure you follow through on what you're telling your patient." },
+  { ref:"mStaffField",   title:"Staff action items",           body:"These queue up in the Staff To Do panel so you can easily copy and paste them into a staff message." },
+  { ref:"mPillInText",   title:"Selection pills in snippets",  body:"You can include selection pills in your snippets to adjust time intervals or messaging. The first option is the default and populates your note automatically. Click to change it.", switchToTransaminitis:true },
+  { ref:"mInsertPillBtn",title:"Insert a selection pill",      body:"Position your cursor in the patient text field, then click Insert selection pill to choose from your library and embed it at the cursor position." },
+  { ref:"mInsertPillModal",title:"Choose a pill to insert",   body:"Select an existing selection pill from your library to insert it into the snippet text at the cursor position.", openInsertModal:true },
+  { ref:"mManagePillsBtn",title:"Manage selection pills",      body:"You can also create your own selection pills with custom options and defaults. Click Manage selection pills to build your library.", closeInsertModal:true },
+  { ref:"mPillLibraryModal",title:"Build your pill library",   body:"Add a new selection pill, name it, add options, reorder them with ↑↓, and click ★ to set your default selection.", openPillLibrary:true, openNewPill:true },
+  { ref:"mDeleteBtn",    title:"Delete snippets",              body:"Delete any snippets you don't need. Deleted snippets can be restored later from the toolbar using Restore deleted triggers.", closePillLibrary:true },
+  { ref:"mAddCustomBtn", title:"Add your own content",         body:"Click Add custom trigger to create your own snippets from scratch — trigger phrase, synonyms, patient text, actions, and lab group." },
+  { ref:"mAddCustomModal",title:"Create a custom snippet",     body:"Fill in the trigger phrase, voice synonyms, patient-facing text, and any clinician or staff actions. Add it to an existing lab group or create a new one.", openAddCustom:true },
+  { ref:"mExportBtn",    title:"Export your customizations",   body:"Export your customizations as a file to share with colleagues or import onto another computer. All your edits, group order, and selection pills are included." },
+];
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function App() {
   const [deletedIds, setDeletedIds] = useState(loadDeletedIds);
@@ -370,6 +392,14 @@ export default function App() {
   const [showTourPrompt, setShowTourPrompt] = useState(() => {
     try { return !localStorage.getItem("lab_tour_prompted"); } catch { return false; }
   });
+  const [showManageTourPrompt, setShowManageTourPrompt] = useState(() => {
+    try { return !localStorage.getItem("lab_manage_tour_prompted"); } catch { return false; }
+  });
+  const [manageTourActive, setManageTourActive] = useState(false);
+  const [manageTourStep, setManageTourStep] = useState(0);
+  const [manageTourRenderTick, setManageTourRenderTick] = useState(0);
+  // State snapshot before manage tour starts (for full reset on Done/Skip)
+  const manageTourSnapshot = useRef(null);
   const tourRefs = useRef({}); // keyed by noteLines index
   const [showNewNoteWarning, setShowNewNoteWarning] = useState(false);
   const [skipNewNoteWarning, setSkipNewNoteWarning] = useState(() => {
@@ -384,6 +414,7 @@ export default function App() {
   const [editActions, setEditActions] = useState("");
   const [editStaffActions, setEditStaffActions] = useState("");
   const [editSynonyms, setEditSynonyms] = useState("");
+  const [editTrigger, setEditTrigger] = useState("");
   const [editHf, setEditHf] = useState(null);
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [newTrigger, setNewTrigger] = useState({ trigger:"", text:"", actions:"", staffActions:"", group:"", newGroup:"", useNew:false });
@@ -434,7 +465,14 @@ export default function App() {
     return () => { try { document.body.removeChild(script); } catch {} };
   }, []);
 
-  // Track left column width for adaptive abbreviations
+  // Show manage tour prompt on first visit to manage tab
+  useEffect(() => {
+    if (activeTab === "manage" && showManageTourPrompt) {
+      // Small delay so tab content renders first
+      const t = setTimeout(() => setShowManageTourPrompt(p => p), 400);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab]);
   useEffect(() => {
     const el = leftColDivRef.current;
     if (!el) return;
@@ -661,6 +699,109 @@ export default function App() {
     setTourExpandedGroup(null);
   };
 
+  // ── Manage Snippets Tour ──────────────────────────────────────────────────
+  const resetManageTourState = () => {
+    if (manageTourSnapshot.current) {
+      const s = manageTourSnapshot.current;
+      setManageOpen(s.manageOpen);
+      setEditingId(s.editingId);
+      setShowInsertPill(s.showInsertPill);
+      setShowPicklistLib(s.showPicklistLib);
+      setEditingPillId(s.editingPillId);
+      setPillEditState(s.pillEditState);
+      setShowAddCustom(s.showAddCustom);
+      manageTourSnapshot.current = null;
+    }
+  };
+
+  const startManageTour = () => {
+    manageTourSnapshot.current = { manageOpen:{...manageOpen}, editingId, showInsertPill, showPicklistLib, editingPillId, pillEditState, showAddCustom };
+    setActiveTab("manage");
+    setManageTourStep(0);
+    setManageTourActive(true);
+    try { localStorage.setItem("lab_manage_tour_prompted","1"); } catch {}
+    setShowManageTourPrompt(false);
+  };
+
+  const dismissManageTourPrompt = () => {
+    setShowManageTourPrompt(false);
+    try { localStorage.setItem("lab_manage_tour_prompted","1"); } catch {}
+  };
+
+  const applyManageTourStep = (stepIdx) => {
+    const step = MANAGE_TOUR_STEPS[stepIdx];
+    if (!step) return;
+    if (step.expandGroup) {
+      setManageOpen(p => ({ ...p, [step.expandGroup]: true }));
+      setTimeout(() => setManageTourRenderTick(n => n+1), 100);
+    }
+    if (step.openEdit) {
+      // Find first Iron studies snippet and open edit
+      const ironSnippet = snippets.find(s => s.group === "Fe/TIBC/Ferr" && !s.ephemeral);
+      if (ironSnippet) { setManageOpen(p=>({...p,"Fe/TIBC/Ferr":true})); startEdit(ironSnippet); }
+      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
+    }
+    if (step.switchToTransaminitis) {
+      const trans = snippets.find(s => s.id === "transaminitis_new");
+      if (trans) { setManageOpen(p=>({...p,"LFTs":true})); startEdit(trans); }
+      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
+    }
+    if (step.openInsertModal) setShowInsertPill("transaminitis_new");
+    if (step.closeInsertModal) setShowInsertPill(null);
+    if (step.openPillLibrary) {
+      setShowPicklistLib(true);
+      // Open new pill edit state
+      const newId = `pl_tour_preview`;
+      setPillEditState({name:"New pill",defaultValue:"option 1",options:["option 1","option 2","option 3"]});
+      setEditingPillId(newId);
+      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
+    }
+    if (step.closePillLibrary) {
+      setShowPicklistLib(false); setEditingPillId(null); setPillEditState(null);
+      // Find iron_normal for delete button spotlight
+      const ironSnippet = snippets.find(s => s.id === "iron_normal");
+      if (ironSnippet) { setManageOpen(p=>({...p,"Fe/TIBC/Ferr":true})); setEditingId(null); }
+      setTimeout(() => setManageTourRenderTick(n => n+1), 120);
+    }
+    if (step.openAddCustom) setShowAddCustom(true);
+  };
+
+  const manageTourNext = () => {
+    if (manageTourStep >= MANAGE_TOUR_STEPS.length - 1) {
+      setManageTourActive(false);
+      resetManageTourState();
+      return;
+    }
+    const next = manageTourStep + 1;
+    applyManageTourStep(next);
+    setManageTourStep(next);
+  };
+
+  const manageTourPrev = () => {
+    if (manageTourStep <= 0) return;
+    const prev = manageTourStep - 1;
+    applyManageTourStep(prev);
+    setManageTourStep(prev);
+  };
+
+  const manageTourSkip = () => {
+    setManageTourActive(false);
+    resetManageTourState();
+  };
+
+  // Force re-render after manage tour step DOM changes
+  useEffect(() => {
+    if (!manageTourActive) return;
+    const step = MANAGE_TOUR_STEPS[manageTourStep];
+    if (step?.expandGroup || step?.openEdit || step?.switchToTransaminitis || step?.openPillLibrary || step?.closePillLibrary) {
+      const raf1 = requestAnimationFrame(() => {
+        const raf2 = requestAnimationFrame(() => setManageTourRenderTick(n => n+1));
+        return () => cancelAnimationFrame(raf2);
+      });
+      return () => cancelAnimationFrame(raf1);
+    }
+  }, [manageTourStep, manageTourActive]);
+
   const addWildcard = (group) => {
     const wcId = `wc_${group}_${Date.now()}`;
     const wc = { id: wcId, group, trigger:`${GROUP_DISPLAY[group] || group} free text`, text:`${GROUP_DISPLAY[group] || group}: `, clinicianActions:[], staffActions:[], isWildcard:true, ephemeral:true };
@@ -692,10 +833,10 @@ export default function App() {
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
-  const startEdit = (s) => { setEditingId(s.id); setEditText(s.text); setEditActions((s.clinicianActions||s.actions||[]).join("\n")); setEditStaffActions((s.staffActions||[]).join("\n")); setEditSynonyms((s.synonyms||[]).join("\n")); };
+  const startEdit = (s) => { setEditingId(s.id); setEditTrigger(s.trigger); setEditText(s.text); setEditActions((s.clinicianActions||s.actions||[]).join("\n")); setEditStaffActions((s.staffActions||[]).join("\n")); setEditSynonyms((s.synonyms||[]).join("\n")); };
   const saveEdit = () => {
     const updated = snippets.map(s => s.id === editingId
-      ? { ...s, text: editText, clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean), staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean), synonyms: editSynonyms.split("\n").map(a=>a.trim()).filter(Boolean) }
+      ? { ...s, trigger: editTrigger, text: editText, clinicianActions: editActions.split("\n").map(a=>a.trim()).filter(Boolean), staffActions: editStaffActions.split("\n").map(a=>a.trim()).filter(Boolean), synonyms: editSynonyms.split("\n").map(a=>a.trim()).filter(Boolean) }
       : s);
     setSnippets(updated); saveSnippets(updated); setEditingId(null);
   };
@@ -704,7 +845,7 @@ export default function App() {
     if (!def) return;
     const updated = snippets.map(s => s.id === id ? { ...s, text: def.text, clinicianActions: def.clinicianActions, staffActions: def.staffActions, synonyms: def.synonyms || [] } : s);
     setSnippets(updated); saveSnippets(updated);
-    if (editingId === id) { setEditText(def.text); setEditActions(def.clinicianActions.join("\n")); setEditStaffActions(def.staffActions.join("\n")); setEditSynonyms((def.synonyms||[]).join("\n")); }
+    if (editingId === id) { setEditTrigger(def.trigger); setEditText(def.text); setEditActions(def.clinicianActions.join("\n")); setEditStaffActions(def.staffActions.join("\n")); setEditSynonyms((def.synonyms||[]).join("\n")); }
   };
   const deleteSnippet = (id) => {
     const isDefault = DEFAULT_SNIPPETS.some(s => s.id === id);
@@ -858,7 +999,7 @@ export default function App() {
             ))}
           </div>
           {/* Tour lightbulb button */}
-          <button ref={el => tourRefs.current.tourBtn = el} onClick={startTour} title="Take a tour" style={{ width:34, height:34, borderRadius:"50%", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"white", transition:"background 0.15s", flexShrink:0 }}
+          <button ref={el => tourRefs.current.tourBtn = el} onClick={() => activeTab === "manage" ? startManageTour() : startTour()} title="Take a tour" style={{ width:34, height:34, borderRadius:"50%", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"white", transition:"background 0.15s", flexShrink:0 }}
             onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-3 6l-1 2H9l-1-2c-1.5-1.5-3-3.5-3-6a7 7 0 0 1 7-7z"/>
@@ -1234,7 +1375,7 @@ export default function App() {
       {activeTab==="manage" && (
         <div style={{ maxWidth:860, margin:"0 auto", padding:"1.25rem 1rem" }}>
           {/* Header/footer */}
-          <div style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"1rem" }}>
+          <div ref={el => tourRefs.current.mEditHf = el} style={{ background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"1rem" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div style={{ fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Header &amp; Footer</div>
               {!editHf && <button onClick={() => setEditHf({...hf})} style={{ fontSize:12, color:"#2563eb", background:"none", border:"1px solid #bfdbfe", borderRadius:6, padding:"4px 10px", cursor:"pointer" }}>Edit</button>}
@@ -1261,18 +1402,18 @@ export default function App() {
 
           {/* Action buttons */}
           <div style={{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap" }}>
-            <button onClick={() => setShowAddCustom(true)} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 14px", cursor:"pointer", fontWeight:500 }}>+ Add custom trigger</button>
-            <button onClick={() => setShowPicklistLib(true)} style={{ fontSize:12, background:"white", color:"#7c3aed", border:"1px solid #ddd6fe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>⊞ Manage selection pills</button>
+            <button ref={el => tourRefs.current.mAddCustomBtn = el} onClick={() => setShowAddCustom(true)} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:7, padding:"7px 14px", cursor:"pointer", fontWeight:500 }}>+ Add custom trigger</button>
+            <button ref={el => tourRefs.current.mManagePillsBtn = el} onClick={() => setShowPicklistLib(true)} style={{ fontSize:12, background:"white", color:"#7c3aed", border:"1px solid #ddd6fe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>⊞ Manage selection pills</button>
             {deletedIds.length > 0 && (
               <button onClick={restoreDeleted} style={{ fontSize:12, background:"white", color:"#16a34a", border:"1px solid #bbf7d0", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>↩ Restore deleted triggers ({deletedIds.length})</button>
             )}
-            <button onClick={() => setShowExport(true)} style={{ fontSize:12, background:"white", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>Export customizations</button>
+            <button ref={el => tourRefs.current.mExportBtn = el} onClick={() => setShowExport(true)} style={{ fontSize:12, background:"white", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>Export customizations</button>
             <button onClick={() => setShowImport(true)} style={{ fontSize:12, background:"white", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 14px", cursor:"pointer" }}>Import customizations</button>
           </div>
 
           {/* Snippets accordion — alphabetical in manage */}
           {getGroupsOrdered(snippets, null).map(({ name, snippets: gSnippets }) => (
-            <div key={name} style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"0.75rem", overflow:"hidden" }}>
+            <div key={name} ref={el => { if(name==="Fe/TIBC/Ferr") tourRefs.current.mIronGroup=el; }} style={{ background:"white", borderRadius:12, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", marginBottom:"0.75rem", overflow:"hidden" }}>
               <button onClick={() => toggleManage(name)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 18px", background: manageOpen[name]?"#eff6ff":"white", border:"none", cursor:"pointer", fontSize:14, fontWeight:600, color:"#1e3a8a" }}>
                 <span>{GROUP_DISPLAY[name] || name}</span>
                 <span style={{ fontSize:11, color:"#93c5fd", transform: manageOpen[name]?"rotate(180deg)":"rotate(0)", transition:"0.2s" }}>▼</span>
@@ -1288,8 +1429,8 @@ export default function App() {
                         </div>
                         {editingId !== s.id && (
                           <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-                            <button onClick={() => startEdit(s)} style={{ fontSize:11, color:"#2563eb", background:"none", border:"1px solid #bfdbfe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Edit</button>
-                            <button onClick={() => deleteSnippet(s.id)} style={{ fontSize:11, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Delete</button>
+                            <button ref={el => { if(s.id==="iron_normal") tourRefs.current.mEditBtn=el; }} onClick={() => startEdit(s)} style={{ fontSize:11, color:"#2563eb", background:"none", border:"1px solid #bfdbfe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Edit</button>
+                            <button ref={el => { if(s.id==="iron_normal") tourRefs.current.mDeleteBtn=el; }} onClick={() => deleteSnippet(s.id)} style={{ fontSize:11, color:"#dc2626", background:"none", border:"1px solid #fee2e2", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Delete</button>
                             {!s.custom && isCustomized(s) && (
                               <button onClick={() => resetToDefault(s.id)} style={{ fontSize:11, color:"#6b7280", background:"none", border:"1px solid #e5e7eb", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>Reset</button>
                             )}
@@ -1298,20 +1439,22 @@ export default function App() {
                       </div>
                       {editingId === s.id ? (
                         <div style={{ marginTop:10 }}>
+                          <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger name (shown in left column and triggered pills)</div>
+                          <input ref={el => tourRefs.current.mTriggerField=el} value={editTrigger} onChange={e=>setEditTrigger(e.target.value)} style={{ width:"100%", fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Voice synonyms (alternate phrases that trigger this snippet — one per line)</div>
-                          <textarea value={editSynonyms} onChange={e=>setEditSynonyms(e.target.value)} placeholder="e.g. thyroid normal no meds&#10;TSH fine" style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea ref={el => tourRefs.current.mSynonymsField=el} value={editSynonyms} onChange={e=>setEditSynonyms(e.target.value)} placeholder="e.g. thyroid normal no meds&#10;TSH fine" style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Patient-facing text</div>
-                          <textarea id={`edit-textarea-${s.id}`} value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea ref={el => { tourRefs.current.mTextField=el; if(s.id==="transaminitis_new") tourRefs.current.mPillInText=el; }} id={`edit-textarea-${s.id}`} value={editText} onChange={e=>setEditText(e.target.value)} style={{ width:"100%", minHeight:90, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ display:"flex", gap:6, marginTop:5, flexWrap:"wrap" }}>
-                            <button onClick={() => setShowInsertPill(s.id)} style={{ fontSize:11, color:"#7c3aed", background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>⊞ Insert selection pill</button>
+                            <button ref={el => tourRefs.current.mInsertPillBtn=el} onClick={() => setShowInsertPill(s.id)} style={{ fontSize:11, color:"#7c3aed", background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>⊞ Insert selection pill</button>
                             {/\{\{[^}]+\}\}/.test(editText) && (
                               <button onClick={() => setEditText(editText.replace(/\{\{([^}|]+)\|[^}]*\}\}/g, '$1').replace(/\{\{([^}]+)\}\}/g, '$1'))} style={{ fontSize:11, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:5, padding:"3px 9px", cursor:"pointer" }}>✕ Remove all pills (keep defaults)</button>
                             )}
                           </div>
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Clinician action items (lab orders, Rx, referrals — one per line)</div>
-                          <textarea value={editActions} onChange={e=>setEditActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea ref={el => tourRefs.current.mActionsField=el} value={editActions} onChange={e=>setEditActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginTop:10, marginBottom:3 }}>Staff action items (scheduling, patient contact — one per line)</div>
-                          <textarea value={editStaffActions} onChange={e=>setEditStaffActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
+                          <textarea ref={el => tourRefs.current.mStaffField=el} value={editStaffActions} onChange={e=>setEditStaffActions(e.target.value)} style={{ width:"100%", minHeight:55, fontSize:12, border:"1px solid #d1d5db", borderRadius:7, padding:"8px 10px", resize:"vertical", fontFamily:"inherit", boxSizing:"border-box" }} />
                           <div style={{ display:"flex", gap:7, marginTop:9 }}>
                             <button onClick={saveEdit} style={{ fontSize:12, background:"#2563eb", color:"white", border:"none", borderRadius:6, padding:"6px 13px", cursor:"pointer" }}>Save</button>
                             <button onClick={()=>setEditingId(null)} style={{ fontSize:12, background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:6, padding:"6px 13px", cursor:"pointer" }}>Cancel</button>
@@ -1333,7 +1476,7 @@ export default function App() {
       {/* MODAL: Add custom trigger */}
       {showAddCustom && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }}>
-          <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:500, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div ref={el => tourRefs.current.mAddCustomModal = el} style={{ background:"white", borderRadius:14, padding:"1.5rem", width:500, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontWeight:700, fontSize:15, color:"#1e3a8a", marginBottom:14 }}>Add custom trigger &amp; snippet</div>
             <div style={{ fontSize:11, fontWeight:600, color:"#6b7280", marginBottom:3 }}>Trigger phrase</div>
             <input value={newTrigger.trigger} onChange={e=>setNewTrigger(p=>({...p,trigger:e.target.value}))} placeholder="e.g. Lipids normal" style={{ width:"100%", fontSize:13, border:"1px solid #d1d5db", borderRadius:7, padding:"7px 10px", boxSizing:"border-box", marginBottom:10 }} />
@@ -1657,10 +1800,83 @@ export default function App() {
         );
       })()}
 
+      {/* ── MANAGE SNIPPETS TOUR PROMPT (first visit to manage tab) ── */}
+      {showManageTourPrompt && !manageTourActive && activeTab === "manage" && !showPhiWarning && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 }}>
+          <div style={{ background:"white", borderRadius:16, padding:"2rem", width:400, maxWidth:"92vw", boxShadow:"0 12px 40px rgba(0,0,0,0.2)", textAlign:"center" }}>
+            <div style={{ width:52, height:52, borderRadius:"50%", background:"#f5f3ff", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-3 6l-1 2H9l-1-2c-1.5-1.5-3-3.5-3-6a7 7 0 0 1 7-7z"/>
+              </svg>
+            </div>
+            <div style={{ fontSize:16, fontWeight:600, color:"#1e3a8a", marginBottom:8 }}>Welcome to Manage Snippets</div>
+            <div style={{ fontSize:13, color:"#6b7280", lineHeight:1.6, marginBottom:24 }}>Would you like a quick tour showing how to customize your snippets, add new ones, and build selection pills?</div>
+            <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+              <button onClick={startManageTour} style={{ background:"#7c3aed", color:"white", border:"none", borderRadius:8, padding:"9px 22px", cursor:"pointer", fontSize:13, fontWeight:500 }}>Yes, show me around</button>
+              <button onClick={dismissManageTourPrompt} style={{ background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:8, padding:"9px 18px", cursor:"pointer", fontSize:13 }}>Skip for now</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANAGE SNIPPETS TOUR OVERLAY ── */}
+      {manageTourActive && (() => {
+        void manageTourRenderTick;
+        const step = MANAGE_TOUR_STEPS[manageTourStep];
+        const targetEl = tourRefs.current[step.ref];
+        const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+        const pad = 8;
+        const hl = rect ? { left: rect.left-pad, top: rect.top-pad, width: rect.width+pad*2, height: rect.height+pad*2 } : null;
+        const ww = window.innerWidth; const wh = window.innerHeight;
+        const tipW = 300; const tipH = 210;
+        let tipLeft, tipTop;
+        if (hl) {
+          const belowTop = hl.top + hl.height + 12;
+          const aboveTop = hl.top - tipH - 12;
+          const fitsBelow = belowTop + tipH <= wh - 8;
+          const fitsAbove = aboveTop >= 8;
+          tipTop = Math.max(8, Math.min(fitsBelow ? belowTop : (fitsAbove ? aboveTop : belowTop), wh - tipH - 8));
+          tipLeft = Math.max(8, Math.min(hl.left, ww - tipW - 8));
+        } else { tipLeft = ww/2 - tipW/2; tipTop = wh/2 - tipH/2; }
+        const overlayColor = "rgba(0,0,0,0.52)";
+        return (
+          <>
+            {hl ? <>
+              <div style={{ position:"fixed", left:0, top:0, width:"100%", height:hl.top, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:0, top:hl.top, width:hl.left, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:hl.left+hl.width, top:hl.top, width:`calc(100% - ${hl.left+hl.width}px)`, height:hl.height, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:0, top:hl.top+hl.height, width:"100%", height:`calc(100% - ${hl.top+hl.height}px)`, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>
+              <div style={{ position:"fixed", left:hl.left, top:hl.top, width:hl.width, height:hl.height, borderRadius:10, boxShadow:"0 0 0 3px #7c3aed, 0 0 0 5px rgba(124,58,237,0.3)", zIndex:400, pointerEvents:"none" }}/>
+              {step.showArrow && rect && (
+                <div style={{ position:"fixed", left: Math.min(rect.right + 8, ww - 120), top: rect.top + rect.height/2 - 11, zIndex:401, pointerEvents:"none" }}>
+                  <div style={{ background:"#7c3aed", color:"white", fontSize:10, fontWeight:700, padding:"4px 8px", borderRadius:4, whiteSpace:"nowrap" }}>← expand here</div>
+                </div>
+              )}
+            </> : <div style={{ position:"fixed", inset:0, background:overlayColor, zIndex:399, pointerEvents:"none" }}/>}
+            <div style={{ position:"fixed", left:tipLeft, top:tipTop, width:tipW, background:"white", borderRadius:12, padding:"1.25rem", boxShadow:"0 8px 32px rgba(0,0,0,0.22)", zIndex:401 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"#7c3aed", marginBottom:6 }}>{step.title}</div>
+              <div style={{ fontSize:12, color:"#4b5563", lineHeight:1.6, marginBottom:14 }}>{step.body}</div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <button onClick={manageTourSkip} style={{ fontSize:11, color:"#9ca3af", background:"none", border:"none", cursor:"pointer", padding:0 }}>Skip tour</button>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ fontSize:11, color:"#9ca3af" }}>{manageTourStep + 1} / {MANAGE_TOUR_STEPS.length}</span>
+                  {manageTourStep > 0 && (
+                    <button onClick={manageTourPrev} style={{ background:"none", color:"#6b7280", border:"1px solid #d1d5db", borderRadius:7, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>← Back</button>
+                  )}
+                  <button onClick={manageTourNext} style={{ background:"#7c3aed", color:"white", border:"none", borderRadius:7, padding:"6px 16px", cursor:"pointer", fontSize:12, fontWeight:500 }}>
+                    {manageTourStep === MANAGE_TOUR_STEPS.length - 1 ? "Done" : "Next →"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {/* ── MODAL: Picklist Library ── */}
       {showPicklistLib && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200 }}>
-          <div style={{ background:"white", borderRadius:16, padding:"1.75rem", width:520, maxWidth:"95vw", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 12px 40px rgba(0,0,0,0.2)" }}>
+          <div ref={el => tourRefs.current.mPillLibraryModal = el} style={{ background:"white", borderRadius:16, padding:"1.75rem", width:520, maxWidth:"95vw", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 12px 40px rgba(0,0,0,0.2)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
               <div style={{ fontSize:15, fontWeight:700, color:"#1e3a8a" }}>Selection pill library</div>
               <button onClick={() => { setShowPicklistLib(false); setEditingPillId(null); setPillEditState(null); }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"#9ca3af" }}>×</button>
@@ -1714,7 +1930,7 @@ export default function App() {
       {/* ── MODAL: Insert pill into snippet ── */}
       {showInsertPill && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:250 }}>
-          <div style={{ background:"white", borderRadius:14, padding:"1.5rem", width:400, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div ref={el => tourRefs.current.mInsertPillModal = el} style={{ background:"white", borderRadius:14, padding:"1.5rem", width:400, maxWidth:"95vw", boxShadow:"0 8px 32px rgba(0,0,0,0.18)" }}>
             <div style={{ fontSize:14, fontWeight:700, color:"#1e3a8a", marginBottom:6 }}>Insert selection pill</div>
             <div style={{ fontSize:12, color:"#6b7280", marginBottom:14 }}>Position your cursor in the text field first, then click a pill to insert it at that position.</div>
             {picklistLibrary.map(pill => (
