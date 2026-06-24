@@ -46,35 +46,35 @@ const GROUP_ABBREV = {
 };
 
 const DEFAULT_SNIPPETS = [
-  { id:"tsh_low_on_meds", group:"TSH", trigger:"TSH low on meds", synonyms:["thyroid low on medication","TSH too low on thyroid meds","thyroid dose too high"], text:"Your TSH is low, which suggests your thyroid dose is too high. I'll send a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
-  { id:"tsh_low_not_on_meds", group:"TSH", trigger:"TSH low (not on meds)", synonyms:["thyroid low not on medication","TSH low no thyroid meds","overactive thyroid"], text:"Your TSH (thyroid) is low, which suggests you may have an overactive thyroid gland. This can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_low_on_meds", group:"TSH", trigger:"TSH low on meds", synonyms:["thyroid low on medication","TSH too low on thyroid meds","thyroid dose too high"], text:"Your TSH is low, which suggests your thyroid dose is too high. I'll send a prescription to your pharmacy with a lower dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in {{6–8 weeks|4 weeks|8 weeks|3 months}}.", clinicianActions:["Send lower-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
+  { id:"tsh_low_not_on_meds", group:"TSH", trigger:"TSH low (not on meds)", synonyms:["thyroid low not on medication","TSH low no thyroid meds","overactive thyroid"], text:"Your TSH (thyroid) is low, which suggests you may have an overactive thyroid gland. This can sometimes cause symptoms like a fast heartbeat, feeling warm, or unintended weight loss. We should recheck your blood test to confirm this. I've sent the order to your lab. Please mark your calendar to get the test done in {{6–8 weeks|4 weeks|8 weeks|3 months}}.", clinicianActions:["Order TSH recheck in 6–8 weeks"], staffActions:[] },
   { id:"tsh_normal_on_meds", group:"TSH", trigger:"TSH normal on meds", synonyms:["thyroid normal on medication","TSH fine on thyroid meds","thyroid controlled"], text:"Your thyroid level (TSH) looks great. Your medication is working well and keeping your thyroid in the normal range. Keep taking it as prescribed.", clinicianActions:[], staffActions:[] },
   { id:"tsh_normal_not_on_meds", group:"TSH", trigger:"TSH normal (not on meds)", synonyms:["thyroid normal no medication","TSH normal no meds"], text:"Your thyroid level (TSH) is normal.", clinicianActions:[], staffActions:[] },
   { id:"tsh_high_on_meds", group:"TSH", trigger:"TSH high on meds", synonyms:["thyroid high on medication","TSH too high on thyroid meds","thyroid dose too low"], text:"Your TSH is higher than it should be, which suggests you may need a higher dose of your thyroid medication if you've been taking it as prescribed. I'll send a prescription to your pharmacy with a slightly higher dose. Please start this as soon as you can. We should repeat a blood test to confirm your thyroid level is back to normal. I've sent the order to your lab. Please mark your calendar to get the test done in 6–8 weeks.", clinicianActions:["Send higher-dose thyroid Rx to pharmacy","Order TSH recheck in 6–8 weeks"], staffActions:[] },
   { id:"tsh_high_not_on_meds", group:"TSH", trigger:"TSH high (not on meds)", synonyms:["thyroid high no medication","underactive thyroid","hypothyroid not on meds"], text:"Your TSH is high, which indicates your thyroid level is lower than normal. This can sometimes cause symptoms like fatigue, feeling cold, or weight gain. If you are feeling fine, we can just recheck in a year. If you are troubled by any of those symptoms, let me know and we can start a low dose of thyroid medication to see if it helps.", clinicianActions:[], staffActions:[] },
   { id:"cbc_normal", group:"CBC", trigger:"CBC normal", synonyms:["blood count normal","CBC fine","blood counts normal"], text:"Your blood counts (CBC) are normal. This includes red blood cells (anemia), white blood cells (infection), and platelets (blood clotting).", clinicianActions:[], staffActions:[] },
-  { id:"mild_anemia", group:"CBC", trigger:"Mild anemia needs labs", synonyms:["anemia needs workup","mild anemia follow up","low blood count needs labs"], text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next 2–3 weeks and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", clinicianActions:["Order anemia workup labs","Add anemia to problem list"], staffActions:["Schedule follow-up visit with me within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
+  { id:"mild_anemia", group:"CBC", trigger:"Mild anemia needs labs", synonyms:["anemia needs workup","mild anemia follow up","low blood count needs labs"], text:"Your blood count shows a mild anemia, meaning your red blood cells are slightly lower than normal. I've ordered some additional lab tests to investigate why you have anemia. I'd like you to get these done in the next {{2–3 weeks|1 week|4 weeks|6 weeks}} and schedule a follow-up visit with me (video visit OK) so we can review results and discuss next steps.", clinicianActions:["Order anemia workup labs","Add anemia to problem list"], staffActions:["Schedule follow-up visit with me within 2–3 weeks (video OK). Remind patient to complete labs at least 3 days before appointment."] },
   { id:"bmp_normal", group:"BMP", trigger:"BMP normal", synonyms:["electrolytes normal","kidney function normal","basic metabolic panel normal"], text:"Your electrolytes and kidney function are normal.", clinicianActions:[], staffActions:[] },
   { id:"lfts_normal", group:"LFTs", trigger:"LFTs normal", synonyms:["liver tests normal","liver function normal","liver enzymes normal"], text:"Your liver tests are normal.", clinicianActions:[], staffActions:[] },
-  { id:"transaminitis_new", group:"LFTs", trigger:"Transaminitis new", synonyms:["new elevated liver enzymes","liver enzymes high first time","new transaminitis"], text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause. Possible causes include alcohol use, herbal medications or supplements, or fat accumulation in the liver. I've ordered repeat blood tests that I'd like you to complete in about a month.", clinicianActions:["Order repeat LFTs + liver workup in ~1 month","Add transaminitis (elevated liver enzymes) to problem list"], staffActions:[] },
-  { id:"transaminitis_still", group:"LFTs", trigger:"Transaminitis still", synonyms:["liver enzymes still elevated","ongoing transaminitis","liver enzymes still high"], text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). You can help treat this by avoiding alcohol and herbal supplements, which can further irritate the liver, and by working toward weight loss. We should recheck blood tests every 6 months to monitor this condition.", clinicianActions:["Order repeat LFTs in 6 months"], staffActions:[] },
+  { id:"transaminitis_new", group:"LFTs", trigger:"Transaminitis new", synonyms:["new elevated liver enzymes","liver enzymes high first time","new transaminitis"], text:"Your liver enzymes (ALT, AST) are higher than normal. We need to repeat the test and include some others to look for the cause. Possible causes include alcohol use, herbal medications or supplements, or fat accumulation in the liver. I've ordered repeat blood tests that I'd like you to complete in about {{1 month|2 weeks|6 weeks|2 months}}.", clinicianActions:["Order repeat LFTs + liver workup in ~1 month","Add transaminitis (elevated liver enzymes) to problem list"], staffActions:[] },
+  { id:"transaminitis_still", group:"LFTs", trigger:"Transaminitis still", synonyms:["liver enzymes still elevated","ongoing transaminitis","liver enzymes still high"], text:"Your liver enzymes remain mildly elevated as they have been previously. This is due to MASLD (metabolic-associated steatotic liver disease, previously known as fatty liver disease). You can help treat this by avoiding alcohol and herbal supplements, which can further irritate the liver, and by working toward weight loss. We should recheck blood tests every {{6 months|3 months|12 months}} to monitor this condition.", clinicianActions:["Order repeat LFTs in 6 months"], staffActions:[] },
   { id:"a1c_normal", group:"A1c", trigger:"A1c normal (no prior diagnosis of DM or preDM)", synonyms:["A1c normal no diabetes","hemoglobin A1c normal","blood sugar normal"], text:"Your A1c is in the normal range, which means your average blood sugar over the past 3 months has been healthy. Keep up the good work with your diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
   { id:"a1c_normal_prediabetes", group:"A1c", trigger:"A1c normal in prediabetes", synonyms:["A1c back to normal prediabetes resolved","prediabetes resolved","blood sugar normalized"], text:"Your A1c is now in the normal range, which means your prediabetes is well controlled. Continue to avoid excess sweets and simple carbohydrates (bread, rice, pasta, potatoes). We should recheck your A1c in one year.", clinicianActions:[], staffActions:[] },
-  { id:"still_prediabetes", group:"A1c", trigger:"Still prediabetes", synonyms:["prediabetes unchanged","A1c still in prediabetes range","borderline diabetes still"], text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:[], staffActions:[] },
-  { id:"new_prediabetes", group:"A1c", trigger:"New prediabetes", synonyms:["new borderline diabetes","A1c in prediabetes range first time","new pre-diabetes"], text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet, lifestyle changes, and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in one year. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:["Add prediabetes to problem list"], staffActions:[] },
+  { id:"still_prediabetes", group:"A1c", trigger:"Still prediabetes", synonyms:["prediabetes unchanged","A1c still in prediabetes range","borderline diabetes still"], text:"Your A1c remains in the prediabetes range. Continue to limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Weight loss often helps eliminate prediabetes. We should recheck your A1c in {{1 year|6 months|3 months}}. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:[], staffActions:[] },
+  { id:"new_prediabetes", group:"A1c", trigger:"New prediabetes", synonyms:["new borderline diabetes","A1c in prediabetes range first time","new pre-diabetes"], text:"Your A1c indicates that you have prediabetes (also known as borderline diabetes). With healthy diet, lifestyle changes, and weight loss we can reduce the risk of you developing diabetes in the coming years. Limit sweets and simple carbohydrates (bread, rice, pasta, potatoes). Eat more fruits, vegetables, and whole grains. Weight loss through diet, exercise, and/or medication often helps eliminate prediabetes. We should recheck your A1c in {{1 year|6 months|3 months}}. If you make significant changes and would like to see the effect on your A1c sooner, we can repeat the test as often as every 3 months.", clinicianActions:["Add prediabetes to problem list"], staffActions:[] },
   { id:"diabetes_controlled_6mo", group:"A1c", trigger:"Diabetes controlled – 6 mo recheck", synonyms:["diabetes well controlled 6 months","A1c at goal 6 month recheck","diabetes stable 6 months"], text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 6 months.", clinicianActions:["Order A1c in 6 months"], staffActions:[] },
   { id:"diabetes_controlled_3mo", group:"A1c", trigger:"Diabetes controlled – 3 mo recheck", synonyms:["diabetes well controlled 3 months","A1c at goal 3 month recheck","diabetes stable 3 months"], text:"Your A1c (diabetes) shows good blood sugar control over the past 3 months. Continue your current diabetes management including diet, exercise, and medications. We should recheck in 3 months.", clinicianActions:["Order A1c in 3 months"], staffActions:[] },
   { id:"diabetes_not_controlled", group:"A1c", trigger:"Diabetes not controlled", synonyms:["A1c too high","diabetes out of control","blood sugar not controlled","diabetes poorly controlled"], text:"Your A1c (diabetes) is higher than we would like, which tells us your blood sugar has been running too high over the past 3 months. We need to work together to improve this and lower your risk of diabetes complications. Please schedule a visit with me in the coming weeks so we can review and adjust your treatment plan.", clinicianActions:[], staffActions:["Schedule visit with me in the next few weeks (video or in-office)."] },
   { id:"new_diabetes", group:"A1c", trigger:"New diagnosis of diabetes", synonyms:["new diabetes diagnosis","A1c in diabetes range first time","new type 2 diabetes"], text:"Your A1c result shows that your blood sugar is now in the diabetes range. We can work together to get your blood sugar back to normal and prevent complications through a combination of diet changes, exercise, and medication. Please schedule a visit with me in the coming weeks (video or in-office) so we can talk through this diagnosis and come up with a plan that works for you.", clinicianActions:["Add type 2 diabetes to problem list"], staffActions:["Schedule new diabetes visit with me in the next few weeks (video or in-office)."] },
   { id:"microalbumin_normal", group:"Microalbumin", trigger:"Microalbumin normal", synonyms:["urine protein normal","microalbumin creatinine ratio normal","kidney protein normal"], text:"Your urine test for protein (microalbumin/creatinine ratio) is normal, which tells us your kidneys are not leaking protein.", clinicianActions:[], staffActions:[] },
-  { id:"microalbumin_elevated_new", group:"Microalbumin", trigger:"Microalbumin elevated new", synonyms:["new urine protein","microalbumin high first time","new kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) shows some protein leaking from your kidneys, which can be an early warning sign that the kidneys are under stress. This can be caused by high blood pressure, diabetes, or other conditions. I've ordered a repeat test to confirm this finding, which I'd like you to complete at your lab in about 1 month.", clinicianActions:["Order repeat microalbumin/creatinine ratio in 1 month"], staffActions:[] },
-  { id:"microalbumin_elevated_still", group:"Microalbumin", trigger:"Microalbumin elevated still", synonyms:["urine protein still elevated","microalbumin still high","ongoing kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) continues to show some protein in your urine. We will continue to monitor this closely and focus on controlling blood pressure and blood sugar to protect your kidney health. We will recheck in 6 months.", clinicianActions:["Order microalbumin/creatinine ratio in 6 months"], staffActions:[] },
+  { id:"microalbumin_elevated_new", group:"Microalbumin", trigger:"Microalbumin elevated new", synonyms:["new urine protein","microalbumin high first time","new kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) shows some protein leaking from your kidneys, which can be an early warning sign that the kidneys are under stress. This can be caused by high blood pressure, diabetes, or other conditions. I've ordered a repeat test to confirm this finding, which I'd like you to complete at your lab in about {{1 month|2 weeks|6 weeks|2 months}}.", clinicianActions:["Order repeat microalbumin/creatinine ratio in 1 month"], staffActions:[] },
+  { id:"microalbumin_elevated_still", group:"Microalbumin", trigger:"Microalbumin elevated still", synonyms:["urine protein still elevated","microalbumin still high","ongoing kidney protein leak"], text:"Your urine test (microalbumin/creatinine ratio) continues to show some protein in your urine. We will continue to monitor this closely and focus on controlling blood pressure and blood sugar to protect your kidney health. We will recheck in {{6 months|3 months|12 months}}.", clinicianActions:["Order microalbumin/creatinine ratio in 6 months"], staffActions:[] },
   { id:"vitd_normal", group:"Vitamin D", trigger:"Vitamin D normal", synonyms:["vitamin D level normal","D level fine","vitamin D okay"], text:"Your vitamin D level is in the normal range. Continue your current supplement if you are taking one.", clinicianActions:[], staffActions:[] },
-  { id:"vitd_low", group:"Vitamin D", trigger:"Vitamin D low", synonyms:["vitamin D deficient","low vitamin D","D level low"], text:"Your vitamin D level is lower than normal. I recommend starting a vitamin D supplement. You can purchase this over the counter — a dose of 2,000 IU daily is a reasonable starting point for most adults. We will recheck your level in 3–4 months.", clinicianActions:["Order vitamin D recheck in 3–4 months"], staffActions:[] },
-  { id:"vitd_very_low", group:"Vitamin D", trigger:"Vitamin D very low", synonyms:["severely low vitamin D","vitamin D very deficient","critically low D level"], text:"Your vitamin D level is significantly low and will need a higher dose to correct. I am sending in a prescription for a higher-dose vitamin D supplement. Please take it once weekly for 8 weeks as directed. We should recheck your level in about 3 months to see if it is improving.", clinicianActions:["Prescribe high-dose vitamin D (e.g. ergocalciferol 50,000 IU weekly x8 weeks)","Order vitamin D recheck in 3–4 months"], staffActions:[] },
+  { id:"vitd_low", group:"Vitamin D", trigger:"Vitamin D low", synonyms:["vitamin D deficient","low vitamin D","D level low"], text:"Your vitamin D level is lower than normal. I recommend starting a vitamin D supplement. You can purchase this over the counter — a dose of 2,000 IU daily is a reasonable starting point for most adults. We will recheck your level in {{3–4 months|2 months|6 months}}.", clinicianActions:["Order vitamin D recheck in 3–4 months"], staffActions:[] },
+  { id:"vitd_very_low", group:"Vitamin D", trigger:"Vitamin D very low", synonyms:["severely low vitamin D","vitamin D very deficient","critically low D level"], text:"Your vitamin D level is significantly low and will need a higher dose to correct. I am sending in a prescription for a higher-dose vitamin D supplement. Please take it once weekly for 8 weeks as directed. We should recheck your level in about {{3 months|6 weeks|4 months}} to see if it is improving.", clinicianActions:["Prescribe high-dose vitamin D (e.g. ergocalciferol 50,000 IU weekly x8 weeks)","Order vitamin D recheck in 3–4 months"], staffActions:[] },
   { id:"vitd_on_supplement", group:"Vitamin D", trigger:"Vitamin D on supplement", synonyms:["vitamin D good on supplement","D level okay on supplement","vitamin D maintained"], text:"Your vitamin D level looks good on your current supplement — keep taking it.", clinicianActions:[], staffActions:[] },
   { id:"lipids_normal", group:"Lipids", trigger:"Lipids normal", synonyms:["cholesterol normal","lipid panel normal","cholesterol fine"], text:"Your cholesterol and lipid levels all look healthy. Continue your current diet and lifestyle habits.", clinicianActions:[], staffActions:[] },
-  { id:"ldl_at_goal_on_statin", group:"Lipids", trigger:"LDL at goal on statin", synonyms:["LDL controlled on statin","cholesterol at goal on medication","statin working well"], text:"Your LDL cholesterol is at goal on your statin medication — great news! Keep taking your medication as prescribed. We will recheck your lipid panel in one year.", clinicianActions:["Order lipid panel in 1 year"], staffActions:[] },
+  { id:"ldl_at_goal_on_statin", group:"Lipids", trigger:"LDL at goal on statin", synonyms:["LDL controlled on statin","cholesterol at goal on medication","statin working well"], text:"Your LDL cholesterol is at goal on your statin medication — great news! Keep taking your medication as prescribed. We will recheck your lipid panel in {{1 year|6 months|2 years}}.", clinicianActions:["Order lipid panel in 1 year"], staffActions:[] },
   { id:"ldl_elevated_no_meds", group:"Lipids", trigger:"LDL elevated no meds needed", synonyms:["LDL high lifestyle only","cholesterol high no medication yet","high LDL diet and exercise"], text:"Your LDL (bad cholesterol) is higher than recommended. For most people, the best first step is to reduce saturated fat in your diet, increase fiber, and get regular aerobic exercise. Depending on your overall heart risk, medication may also be appropriate. Let's discuss this at your next visit. If you'd like to discuss sooner, please schedule a visit.", clinicianActions:[], staffActions:[] },
   { id:"ldl_high_despite_statin", group:"Lipids", trigger:"LDL too high despite statin", synonyms:["LDL still high on statin","cholesterol not controlled on medication","statin not working"], text:"Your LDL cholesterol is still above our target despite your statin medication. This may mean the dose needs to be adjusted or that we consider adding another medication. I'd like to discuss your options — please schedule a visit or send me a message.", clinicianActions:[], staffActions:["Schedule visit with me within 1–2 months (video OK)."] },
   { id:"ldl_high_needs_statin", group:"Lipids", trigger:"LDL too high – needs statin", synonyms:["LDL high start statin","high cholesterol needs medication","starting statin therapy"], text:"Your LDL (bad cholesterol) is too high, and given your overall cardiovascular risk, I recommend starting a statin medication once daily. I've sent this to your pharmacy. Please take it daily as prescribed. If you'd like to discuss further before starting, please schedule an in-office or video visit in the next 1–2 months. Once you start the medication, let's repeat your lipid panel at least 2 months later to see how it's working.", clinicianActions:["Prescribe statin","Order lipid panel in 2+ months after starting statin"], staffActions:[] },
@@ -88,16 +88,16 @@ const DEFAULT_SNIPPETS = [
   { id:"hbv_not_immune", group:"HBV", trigger:"HBsAg neg but NOT HBV immune", synonyms:["hepatitis B not immune needs vaccine","hep B needs vaccine","not immune to hepatitis B"], text:"Your hepatitis B test shows that you do not have hepatitis B infection but are not immune. We should start your hepatitis B vaccination series to give you lifelong immunity and protection.", clinicianActions:["Order/administer hepatitis B vaccine series"], staffActions:[] },
   { id:"b12_normal", group:"Vitamin B12", trigger:"B12 normal", synonyms:["vitamin B12 normal","B12 fine","cobalamin normal"], text:"Your vitamin B12 level is in the normal range. If you are taking a supplement, continue it. Otherwise, no need to start taking extra B12.", clinicianActions:[], staffActions:[] },
   { id:"b12_borderline", group:"Vitamin B12", trigger:"B12 borderline (200–400)", synonyms:["B12 borderline low","vitamin B12 borderline","B12 low normal"], text:"Your vitamin B12 level is in the borderline range. I'd like you to start taking a vitamin B12 supplement — 1,000 mcg daily by mouth. We can recheck your B12 level next time we do blood tests.", clinicianActions:[], staffActions:[] },
-  { id:"b12_low", group:"Vitamin B12", trigger:"B12 low", synonyms:["vitamin B12 deficient","low B12","B12 deficiency"], text:"Your vitamin B12 level is lower than normal. B12 is important for nerve function and red blood cell production. Low levels can sometimes cause fatigue, tingling, or memory issues. I recommend starting a B12 supplement — 1,000 mcg daily by mouth is a good dose for most adults. We will recheck in 3 months.", clinicianActions:["Order B12 recheck in 3 months"], staffActions:[] },
+  { id:"b12_low", group:"Vitamin B12", trigger:"B12 low", synonyms:["vitamin B12 deficient","low B12","B12 deficiency"], text:"Your vitamin B12 level is lower than normal. B12 is important for nerve function and red blood cell production. Low levels can sometimes cause fatigue, tingling, or memory issues. I recommend starting a B12 supplement — 1,000 mcg daily by mouth is a good dose for most adults. We will recheck in {{3 months|6 weeks|6 months}}.", clinicianActions:["Order B12 recheck in 3 months"], staffActions:[] },
   { id:"psa_normal_screening", group:"PSA", trigger:"PSA screening – normal", synonyms:["PSA normal","prostate cancer screening normal","PSA fine"], text:"Your PSA test for prostate cancer screening is normal. If you'd like to continue screening, we should repeat the test in 1–4 years depending on your PSA level and risk factors.", clinicianActions:[], staffActions:[] },
   { id:"psa_mildly_elevated", group:"PSA", trigger:"PSA screening – mildly elevated", synonyms:["PSA mildly high","slightly elevated PSA","PSA borderline"], text:"Your PSA test for prostate cancer screening is mildly elevated. This does NOT mean you have prostate cancer, but we do need to recheck your level in about a month to see if it remains high. If it is still elevated, I'll refer you to a urologist to discuss whether you need additional testing.", clinicianActions:["Order PSA recheck in 1 month"], staffActions:[] },
   { id:"psa_quite_elevated", group:"PSA", trigger:"PSA screening – quite elevated", synonyms:["PSA significantly high","PSA very elevated","high PSA needs urology"], text:"Your PSA test for prostate cancer screening is high and requires further evaluation. I am referring you to a urologist to discuss the best next steps. Please expect to hear about your referral within 1 week. Contact our office if you do not.", clinicianActions:["Refer to urology for elevated PSA"], staffActions:["Ensure urology referral is sent and patient is contacted within 1 week."] },
   { id:"psa_normal_prior_ca", group:"PSA", trigger:"PSA normal – prior prostate cancer", synonyms:["PSA undetectable prior prostate cancer","PSA okay history of prostate cancer"], text:"Your PSA level is low or undetectable, which is reassuring and does not show signs of recurrence of your prostate cancer. We should repeat this test in one year.", clinicianActions:[], staffActions:[] },
   { id:"psa_elevated_prior_ca", group:"PSA", trigger:"PSA elevated – prior prostate cancer", synonyms:["PSA rising prior prostate cancer","PSA up history of prostate cancer"], text:"Your PSA level is elevated. I'd like you to schedule a follow-up with your urologist to discuss the best next steps. If you don't have a current urologist, let me know and I can send a referral.", clinicianActions:["Refer to urology for elevated PSA — prior prostate cancer history"], staffActions:["Assist patient with urology referral or contact existing urologist's office."] },
   { id:"iron_normal", group:"Fe/TIBC/Ferr", trigger:"Iron studies normal", synonyms:["iron normal","ferritin normal","iron panel normal"], text:"Your iron tests (iron, total iron binding capacity, and ferritin) are all within the normal range.", clinicianActions:[], staffActions:[] },
-  { id:"iron_deficiency_no_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency – no anemia, menstruating women", synonyms:["iron low no anemia women","iron deficiency without anemia female","low iron stores menstruating women"], text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in 6 months. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
-  { id:"iron_deficiency_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – menstruating women", synonyms:["iron deficiency anemia women","anemia from low iron female","iron deficiency anemia menstruating"], text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in 6 months. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency anemia to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
-  { id:"iron_deficiency_anemia_men", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – men", synonyms:["iron deficiency anemia men","anemia from low iron male","iron deficiency anemia male"], text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss further testing and next steps.", clinicianActions:["Add iron deficiency anemia to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
+  { id:"iron_deficiency_no_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency – no anemia, menstruating women", synonyms:["iron low no anemia women","iron deficiency without anemia female","low iron stores menstruating women"], text:"Your iron tests show low iron levels, but not low enough to cause anemia yet. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help build up your iron levels. We should recheck your blood count and iron levels in {{6 months|3 months|12 months}}. I've ordered this test for you. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_women", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – menstruating women", synonyms:["iron deficiency anemia women","anemia from low iron female","iron deficiency anemia menstruating"], text:"Your labs confirm low iron levels that are causing anemia. This is common in women who are still having periods due to regular blood loss. Please start taking an iron tablet (ferrous sulfate 325 mg) three times a week (for example, Monday, Wednesday, Friday) to help boost your iron levels and blood counts. We should recheck in {{6 months|3 months|12 months}}. If you are not having periods or if they are very light, please let me know so we can look for other possible causes.", clinicianActions:["Add iron deficiency anemia to problem list","Order CBC and iron studies in 6 months"], staffActions:[] },
+  { id:"iron_deficiency_anemia_men", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency anemia – men", synonyms:["iron deficiency anemia men","anemia from low iron male","iron deficiency anemia male"], text:"Your labs confirm low iron levels that are causing anemia. In men, iron deficiency anemia requires further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next {{few weeks|1–2 weeks|4–6 weeks}} to discuss further testing and next steps.", clinicianActions:["Add iron deficiency anemia to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
   { id:"iron_deficiency_no_anemia_men", group:"Fe/TIBC/Ferr", trigger:"Iron deficiency without anemia – men", synonyms:["iron low no anemia men","iron deficiency without anemia male","low iron stores men"], text:"Your labs confirm low iron levels, but not low enough to cause anemia yet. In men, low iron levels require further investigation to look for an underlying cause. I've asked my staff to contact you to schedule a visit with me in the next few weeks to discuss next steps.", clinicianActions:["Add iron deficiency to problem list"], staffActions:["Schedule visit with me within 4 weeks (video or in-office)."] },
   { id:"ferritin_elevated", group:"Fe/TIBC/Ferr", trigger:"Ferritin elevated", synonyms:["high ferritin","ferritin too high","elevated ferritin level"], text:"Your ferritin level is higher than normal. Ferritin is a protein that stores iron, but it is also an inflammatory marker — it can be elevated with infection, inflammation, liver disease, or excess iron. At this level, no treatment is required. We can repeat this test with your next regularly planned blood tests.", clinicianActions:[], staffActions:[] },
   { id:"testosterone_normal", group:"Testosterone", trigger:"Testosterone normal", synonyms:["testosterone level normal","testosterone fine","T level normal"], text:"Your testosterone level is within the normal range.", clinicianActions:[], staffActions:[] },
@@ -298,6 +298,34 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [staffCopied, setStaffCopied] = useState(false);
   const [noteEdits, setNoteEdits] = useState({});
+  const [picklistSelections, setPicklistSelections] = useState({}); // key: `${lineIdx}-${tokenIdx}` → selected value
+  const [openPicklist, setOpenPicklist] = useState(null); // key of currently open picklist dropdown
+
+  // Parse snippet text into segments: plain strings and picklist tokens
+  // Token syntax: {{default|option2|option3}}
+  const parseTokens = (text) => {
+    const parts = [];
+    const re = /\{\{([^}]+)\}\}/g;
+    let last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parts.push({ type:"text", value: text.slice(last, m.index) });
+      const opts = m[1].split("|");
+      parts.push({ type:"picklist", options: opts, defaultValue: opts[0] });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push({ type:"text", value: text.slice(last) });
+    return parts;
+  };
+
+  // Resolve a line's text with picklist selections applied (for copy)
+  const resolveText = (text, lineIdx) => {
+    let tokenIdx = 0;
+    return text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+      const opts = inner.split("|");
+      const key = `${lineIdx}-${tokenIdx++}`;
+      return picklistSelections[key] ?? opts[0];
+    });
+  };
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -346,7 +374,13 @@ export default function App() {
 
   const groups = getGroupsOrdered(snippets, groupOrder);
 
-  // Load JotForm embed handler for auto-resize
+  // Close open picklist when clicking outside
+  useEffect(() => {
+    if (!openPicklist) return;
+    const handler = () => setOpenPicklist(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [openPicklist]);
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js";
@@ -437,7 +471,10 @@ export default function App() {
   })();
 
   const fullNote = noteLines.length > 0
-    ? `${hf.header}\n\n${noteLines.map((l, i) => `• ${noteEdits[i] !== undefined ? noteEdits[i] : l.text}`).join("\n")}\n\n${hf.footer}`
+    ? `${hf.header}\n\n${noteLines.map((l, i) => {
+        const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
+        return `• ${resolveText(base, i)}`;
+      }).join("\n")}\n\n${hf.footer}`
     : "";
 
   // ── Speech ────────────────────────────────────────────────────────────────
@@ -580,7 +617,7 @@ export default function App() {
 
   const removeTriggered = (idx) => setTriggered(prev => prev.filter((_, i) => i !== idx));
 
-  const doNewNote = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); setCopied(false); setStaffCopied(false); setNoteEdits({}); };
+  const doNewNote = () => { setTriggered([]); setCheckedActions({}); setMatchStatus(null); setCopied(false); setStaffCopied(false); setNoteEdits({}); setPicklistSelections({}); setOpenPicklist(null); };
   const handleNewNote = () => {
     if (triggered.length === 0) { doNewNote(); return; }
     if (skipNewNoteWarning) { doNewNote(); return; }
@@ -940,43 +977,74 @@ export default function App() {
                     {noteLines.map((line, i) => {
                       const currentText = noteEdits[i] !== undefined ? noteEdits[i] : line.text;
                       const isEdited = noteEdits[i] !== undefined && noteEdits[i] !== line.text;
+                      const segments = parseTokens(currentText);
+                      const hasPicklists = !isEdited && segments.some(s => s.type === "picklist");
                       return (
                         <div key={i} className="note-bullet-row" style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start", position:"relative" }}>
                           <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:4 }}>•</span>
                           <div style={{ flex:1, position:"relative" }}>
-                            <textarea
-                              value={currentText}
-                              onChange={e => setNoteEdits(prev => ({ ...prev, [i]: e.target.value }))}
-                              style={{
-                                width:"100%", fontSize:13, lineHeight:1.6, color:"#1f2937",
-                                border: isEdited ? "1px solid #bfdbfe" : "1px solid transparent",
-                                borderRadius:6, padding:"3px 6px", resize:"none", fontFamily:"inherit",
-                                background: isEdited ? "#f0f9ff" : "transparent",
-                                cursor:"text", overflow:"hidden", boxSizing:"border-box",
-                                minHeight:24,
-                              }}
-                              rows={Math.max(1, Math.ceil(currentText.length / 72))}
-                              onFocus={e => { e.target.style.border="1px solid #93c5fd"; e.target.style.background="#f0f9ff"; }}
-                              onBlur={e => {
-                                e.target.style.border = isEdited ? "1px solid #bfdbfe" : "1px solid transparent";
-                                e.target.style.background = isEdited ? "#f0f9ff" : "transparent";
-                              }}
-                            />
+                            {hasPicklists ? (
+                              <div style={{ fontSize:13, lineHeight:1.9, color:"#1f2937", padding:"3px 6px" }}>
+                                {segments.map((seg, si) => {
+                                  if (seg.type === "text") return <span key={si}>{seg.value}</span>;
+                                  const tokenIdx = segments.slice(0,si).filter(s=>s.type==="picklist").length;
+                                  const key = `${i}-${tokenIdx}`;
+                                  const selected = picklistSelections[key] ?? seg.defaultValue;
+                                  const isOpen = openPicklist === key;
+                                  return (
+                                    <span key={si} style={{ position:"relative", display:"inline-block" }}>
+                                      <button onClick={() => setOpenPicklist(isOpen ? null : key)}
+                                        style={{ display:"inline-flex", alignItems:"center", gap:3, background:"#dbeafe", color:"#1e40af", border:"1.5px solid #93c5fd", borderRadius:5, padding:"1px 8px", fontSize:12, fontWeight:600, cursor:"pointer", lineHeight:1.6, verticalAlign:"middle" }}>
+                                        {selected}
+                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                      </button>
+                                      {isOpen && (
+                                        <div style={{ position:"absolute", top:"calc(100% + 2px)", left:0, background:"white", border:"1px solid #93c5fd", borderRadius:7, boxShadow:"0 4px 16px rgba(0,0,0,0.12)", zIndex:60, minWidth:110, overflow:"hidden" }}>
+                                          {seg.options.map(opt => (
+                                            <button key={opt} onClick={() => { setPicklistSelections(p=>({...p,[key]:opt})); setOpenPicklist(null); }}
+                                              style={{ display:"block", width:"100%", textAlign:"left", padding:"6px 12px", background: opt===selected?"#eff6ff":"white", color: opt===selected?"#1e40af":"#1f2937", border:"none", cursor:"pointer", fontSize:12, fontWeight: opt===selected?600:400 }}
+                                              onMouseEnter={e=>{ if(opt!==selected) e.currentTarget.style.background="#f0f9ff"; }}
+                                              onMouseLeave={e=>{ if(opt!==selected) e.currentTarget.style.background="white"; }}>
+                                              {opt}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <textarea
+                                value={currentText}
+                                onChange={e => setNoteEdits(prev => ({ ...prev, [i]: e.target.value }))}
+                                style={{
+                                  width:"100%", fontSize:13, lineHeight:1.6, color:"#1f2937",
+                                  border: isEdited ? "1px solid #bfdbfe" : "1px solid transparent",
+                                  borderRadius:6, padding:"3px 6px", resize:"none", fontFamily:"inherit",
+                                  background: isEdited ? "#f0f9ff" : "transparent",
+                                  cursor:"text", overflow:"hidden", boxSizing:"border-box", minHeight:24,
+                                }}
+                                rows={Math.max(1, Math.ceil(currentText.length / 72))}
+                                onFocus={e => { e.target.style.border="1px solid #93c5fd"; e.target.style.background="#f0f9ff"; }}
+                                onBlur={e => {
+                                  e.target.style.border = isEdited ? "1px solid #bfdbfe" : "1px solid transparent";
+                                  e.target.style.background = isEdited ? "#f0f9ff" : "transparent";
+                                }}
+                              />
+                            )}
                             {isEdited && (
                               <button onClick={() => setNoteEdits(prev => { const n={...prev}; delete n[i]; return n; })}
                                 title="Revert to original"
                                 style={{ position:"absolute", top:2, right:2, background:"none", border:"none", cursor:"pointer", color:"#93c5fd", fontSize:13, lineHeight:1, padding:0 }}>↺</button>
                             )}
                           </div>
-                          {/* Hover delete button */}
                           <button
                             className="bullet-delete-btn"
                             title="Remove this result from note"
                             onClick={() => {
                               const triggeredIdx = triggered.lastIndexOf(line.id);
-                              if (triggeredIdx !== -1) {
-                                setTriggered(prev => { const n=[...prev]; n.splice(triggeredIdx,1); return n; });
-                              }
+                              if (triggeredIdx !== -1) setTriggered(prev => { const n=[...prev]; n.splice(triggeredIdx,1); return n; });
                               setNoteEdits(prev => { const n={...prev}; delete n[i]; return n; });
                             }}
                             style={{ position:"absolute", top:2, right:-22, width:18, height:18, borderRadius:"50%", background:"#fee2e2", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", opacity:0, transition:"opacity 0.15s", flexShrink:0 }}>
