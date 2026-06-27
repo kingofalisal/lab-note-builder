@@ -380,10 +380,8 @@ export default function App() {
   const [picklistSelections, setPicklistSelections] = useState({}); // key: `${lineIdx}-${tokenIdx}` → selected value
   const [openPicklist, setOpenPicklist] = useState(null); // key of currently open picklist dropdown
 
-  // Parse snippet text into segments: plain strings, picklist tokens, and link tokens
-  // Picklist syntax: {{default|option2|option3}}
-  // Link syntax:     {{@display text|https://url}}
-  // Inline markup:   !!text!! renders as bold red
+  // Parse snippet text into segments: plain strings and picklist tokens
+  // Token syntax: {{default|option2|option3}}
   const parseTokens = (text) => {
     const parts = [];
     const re = /\{\{([^}]+)\}\}/g;
@@ -391,41 +389,14 @@ export default function App() {
     while ((m = re.exec(text)) !== null) {
       if (m.index > last) parts.push({ type:"text", value: text.slice(last, m.index) });
       const rawOpts = m[1].split("|");
-      if (rawOpts[0].startsWith("@")) {
-        const label = rawOpts[0].slice(1);
-        const url = rawOpts[1] || "";
-        parts.push({ type:"link", label, url });
-      } else {
-        const defaultValue = rawOpts[0];
-        const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
-        parts.push({ type:"picklist", options: sorted, defaultValue });
-      }
+      const defaultValue = rawOpts[0];
+      // Sort options by duration for display, keeping default value independent
+      const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
+      parts.push({ type:"picklist", options: sorted, defaultValue });
       last = m.index + m[0].length;
     }
     if (last < text.length) parts.push({ type:"text", value: text.slice(last) });
     return parts;
-  };
-
-  // Render a plain text segment, splitting on !!text!! into bold+red spans
-  const renderInlineText = (value, key) => {
-    const subRe = /!!(.+?)!!/g;
-    const nodes = [];
-    let subLast = 0, subM, subIdx = 0;
-    while ((subM = subRe.exec(value)) !== null) {
-      if (subM.index > subLast) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast, subM.index)}</span>);
-      nodes.push(<span key={`${key}-r${subIdx++}`} style={{ color:"#dc2626", fontWeight:700 }}>{subM[1]}</span>);
-      subLast = subM.index + subM[0].length;
-    }
-    if (subLast < value.length) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast)}</span>);
-    return nodes;
-  };
-
-  // Strip all markup notation to produce clean plain text (used for tooltips)
-  const stripMarkup = (text) => {
-    let out = text.replace(/\{\{@([^|]*)\|[^}]*\}\}/g, "$1");
-    out = out.replace(/\{\{([^}]+)\}\}/g, (_, inner) => inner.split("|")[0]);
-    out = out.replace(/!!(.+?)!!/g, "$1");
-    return out;
   };
 
   // Parse a duration string to a comparable number of days
@@ -438,17 +409,14 @@ export default function App() {
     return 0;
   };
 
-  // Resolve a line's text to plain text (strips !! markers, resolves links to label)
+  // Resolve a line's text with picklist selections applied (for copy)
   const resolveText = (text, lineIdx) => {
     let tokenIdx = 0;
-    let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+    return text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
       const opts = inner.split("|");
-      if (opts[0].startsWith("@")) return opts[0].slice(1);
       const key = `${lineIdx}-${tokenIdx++}`;
       return picklistSelections[key] ?? opts[0];
     });
-    resolved = resolved.replace(/!!(.+?)!!/g, "$1");
-    return resolved;
   };
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
   const [tourActive, setTourActive] = useState(false);
@@ -935,84 +903,12 @@ export default function App() {
 
   const copyNote = () => {
     if (isListening) stopListening();
-
-    const doIncrement = () => {
+    navigator.clipboard.writeText(fullNote).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      // increment notes counter
       fetch("/api/stats?action=note").then(r=>r.json()).then(d=>setStats(d)).catch(()=>{});
-    };
-    const doSuccess = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); };
-
-    // Build formatted HTML for one note line
-    const buildLineHtml = (text, lineIdx) => {
-      let tokenIdx = 0;
-      let html = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
-        const opts = inner.split("|");
-        if (opts[0].startsWith("@")) {
-          const label = opts[0].slice(1);
-          const url = opts[1] || "";
-          return `<a href="${url}">${label}</a>`;
-        }
-        const key = `${lineIdx}-${tokenIdx++}`;
-        return picklistSelections[key] ?? opts[0];
-      });
-      html = html.replace(/!!(.+?)!!/g, '<b><font color="#dc2626">$1</font></b>');
-      return html;
-    };
-
-    const lineParas = noteLines.map((l, i) => {
-      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      return `<p>• ${buildLineHtml(base, i)}</p>`;
-    }).join("");
-
-    const fullHtml = `<p>${hf.header}</p>${lineParas}<p>${hf.footer}</p>`;
-
-    // Strategy: use a focused contenteditable div + execCommand("copy").
-    // contenteditable elements get special browser clipboard handling that
-    // produces proper CF_HTML on the Windows clipboard — distinct from copying
-    // a regular (non-editable) div's selected content.
-    const editor = document.createElement("div");
-    editor.contentEditable = "true";
-    editor.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:600px;font-family:Arial,sans-serif;font-size:13px;color:#1f2937;opacity:0;pointer-events:none";
-    editor.innerHTML = fullHtml;
-    document.body.appendChild(editor);
-
-    let succeeded = false;
-    try {
-      editor.focus();
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      succeeded = document.execCommand("copy");
-      sel.removeAllRanges();
-    } catch(e) {}
-    document.body.removeChild(editor);
-
-    if (succeeded) { doSuccess(); return; }
-
-    // Fallback: clipboard.write() with Office-compatible HTML document.
-    // Includes mso namespace declarations that Epic (built on IE/Office rendering)
-    // may require to trust the clipboard content.
-    try {
-      const htmlDoc = [
-        '<!DOCTYPE html>',
-        '<html xmlns:o="urn:schemas-microsoft-com:office:office"',
-        '      xmlns:w="urn:schemas-microsoft-com:office:word"',
-        '      xmlns="http://www.w3.org/TR/REC-html40">',
-        '<head><meta charset="utf-8">',
-        '<style>p{margin:0 0 4px 0;font-family:Arial,sans-serif;font-size:13px}</style>',
-        '</head>',
-        `<body>${fullHtml}</body>`,
-        '</html>'
-      ].join("");
-      const htmlBlob = new Blob([htmlDoc], { type:"text/html" });
-      const textBlob = new Blob([fullNote], { type:"text/plain" });
-      navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
-        .then(doSuccess)
-        .catch(() => navigator.clipboard.writeText(fullNote).then(doSuccess).catch(()=>{}));
-    } catch {
-      navigator.clipboard.writeText(fullNote).then(doSuccess).catch(()=>{});
-    }
+    });
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
@@ -1224,7 +1120,7 @@ export default function App() {
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div className="lab-row" style={{ display:"flex", alignItems:"center", position:"relative" }}>
                       {/* Tooltip on outer row so it aligns consistently with/without expand arrow */}
-                      {defaultSnippet && <div className="snippet-tooltip">{stripMarkup(defaultSnippet.text)}</div>}
+                      {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
                       {/* Six-dot grip handle */}
                       <div style={{ padding:"0 7px 0 9px", cursor:"grab", flexShrink:0, display:"flex", alignItems:"center" }} title="Drag to reorder" aria-hidden="true">
                         <svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1272,7 +1168,7 @@ export default function App() {
                                   : <>+ {s.trigger}</>
                                 }
                               </button>
-                              <div className="snippet-tooltip">{stripMarkup(s.text)}</div>
+                              <div className="snippet-tooltip">{s.text}</div>
                             </div>
                           );
                         })}
@@ -1375,7 +1271,7 @@ export default function App() {
                       const freeTextPrefix = isFreeText ? `${GROUP_DISPLAY[line.group] || line.group}: ` : "";
                       const isEmpty = isFreeText && (currentText.trim() === freeTextPrefix.trim() || currentText.trim() === "");
                       const segments = parseTokens(currentText);
-                      const hasPicklists = !isEdited && segments.some(s => s.type === "picklist" || s.type === "link" || (s.type === "text" && /!!.+!!/.test(s.value)));
+                      const hasPicklists = !isEdited && segments.some(s => s.type === "picklist");
                       return (
                         <div key={i} className="note-bullet-row" style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start", position:"relative" }}>
                           <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:4 }}>•</span>
@@ -1383,8 +1279,7 @@ export default function App() {
                             {hasPicklists ? (
                               <div style={{ fontSize:13, lineHeight:1.9, color:"#1f2937", padding:"3px 6px" }}>
                                 {segments.map((seg, si) => {
-                                  if (seg.type === "text") return <span key={si}>{renderInlineText(seg.value, si)}</span>;
-                                  if (seg.type === "link") return <a key={si} href={seg.url} target="_blank" rel="noopener noreferrer" style={{ color:"#2563eb", textDecoration:"underline", cursor:"pointer" }}>{seg.label}</a>;
+                                  if (seg.type === "text") return <span key={si}>{seg.value}</span>;
                                   const tokenIdx = segments.slice(0,si).filter(s=>s.type==="picklist").length;
                                   const key = `${i}-${tokenIdx}`;
                                   const selected = picklistSelections[key] ?? seg.defaultValue;
