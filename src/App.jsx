@@ -392,12 +392,10 @@ export default function App() {
       if (m.index > last) parts.push({ type:"text", value: text.slice(last, m.index) });
       const rawOpts = m[1].split("|");
       if (rawOpts[0].startsWith("@")) {
-        // Link token: {{@display text|https://url}}
         const label = rawOpts[0].slice(1);
         const url = rawOpts[1] || "";
         parts.push({ type:"link", label, url });
       } else {
-        // Picklist token
         const defaultValue = rawOpts[0];
         const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
         parts.push({ type:"picklist", options: sorted, defaultValue });
@@ -408,7 +406,7 @@ export default function App() {
     return parts;
   };
 
-  // Render a plain text segment, recognizing !!text!! as bold+red inline spans
+  // Render a plain text segment, splitting on !!text!! into bold+red spans
   const renderInlineText = (value, key) => {
     const subRe = /!!(.+?)!!/g;
     const nodes = [];
@@ -422,12 +420,11 @@ export default function App() {
     return nodes;
   };
 
-  // Strip all markup notation from a text string to produce clean plain text
-  // Used for hover tooltips and plain-text clipboard fallback
+  // Strip all markup notation to produce clean plain text (used for tooltips)
   const stripMarkup = (text) => {
-    let out = text.replace(/\{\{@([^|]*)\|[^}]*\}\}/g, "$1"); // {{@label|url}} -> label
-    out = out.replace(/\{\{([^}]+)\}\}/g, (_, inner) => inner.split("|")[0]); // {{a|b|c}} -> a
-    out = out.replace(/!!(.+?)!!/g, "$1"); // !!text!! -> text
+    let out = text.replace(/\{\{@([^|]*)\|[^}]*\}\}/g, "$1");
+    out = out.replace(/\{\{([^}]+)\}\}/g, (_, inner) => inner.split("|")[0]);
+    out = out.replace(/!!(.+?)!!/g, "$1");
     return out;
   };
 
@@ -441,37 +438,16 @@ export default function App() {
     return 0;
   };
 
-  // Resolve a line's text with picklist selections applied (for plain-text copy)
-  // Strips !!...!! markers and unwraps {{@label|url}} to label only
+  // Resolve a line's text to plain text (strips !! markers, resolves links to label)
   const resolveText = (text, lineIdx) => {
     let tokenIdx = 0;
     let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
       const opts = inner.split("|");
-      if (opts[0].startsWith("@")) return opts[0].slice(1); // link -> plain label
+      if (opts[0].startsWith("@")) return opts[0].slice(1);
       const key = `${lineIdx}-${tokenIdx++}`;
       return picklistSelections[key] ?? opts[0];
     });
-    resolved = resolved.replace(/!!(.+?)!!/g, "$1"); // strip !! markers
-    return resolved;
-  };
-
-  // Resolve a line's text into an HTML string for rich clipboard copy.
-  // Uses a full HTML document wrapper so Word and Epic accept rich formatting.
-  // Color is expressed as both a CSS attribute and an mso-color for Outlook/Epic compat.
-  const resolveHtml = (text, lineIdx) => {
-    let tokenIdx = 0;
-    let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
-      const opts = inner.split("|");
-      if (opts[0].startsWith("@")) {
-        const label = opts[0].slice(1);
-        const url = opts[1] || "";
-        return `<a href="${url}" style="color:#1d4ed8">${label}</a>`;
-      }
-      const key = `${lineIdx}-${tokenIdx++}`;
-      return picklistSelections[key] ?? opts[0];
-    });
-    resolved = resolved.replace(/!!(.+?)!!/g,
-      '<span style="color:#dc2626;font-weight:bold">$1</span>');
+    resolved = resolved.replace(/!!(.+?)!!/g, "$1");
     return resolved;
   };
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
@@ -960,31 +936,54 @@ export default function App() {
   const copyNote = () => {
     if (isListening) stopListening();
 
-    // Plain-text fallback (strips all markup notation)
-    const plainText = fullNote;
-
-    // Rich HTML note — full document wrapper required for Word and Epic to accept formatting
-    const htmlLines = noteLines.map((l, i) => {
-      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      return `<li style="margin-bottom:6px">${resolveHtml(base, i)}</li>`;
-    }).join("");
-    const htmlNote = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><p style="margin-bottom:12px">${hf.header}</p><ul style="margin:0;padding-left:20px">${htmlLines}</ul><p style="margin-top:12px">${hf.footer}</p></body></html>`;
-
     const doIncrement = () => {
       fetch("/api/stats?action=note").then(r=>r.json()).then(d=>setStats(d)).catch(()=>{});
     };
+    const doSuccess = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); };
+
+    // Build a hidden div with live DOM rendering — bold, red, and links render as
+    // real styled elements. Selecting and copying this div via execCommand causes
+    // the browser to write rich text to the clipboard in a format Epic accepts,
+    // because it copies rendered DOM rather than a manually constructed HTML string.
+    const htmlLines = noteLines.map((l, i) => {
+      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
+      // Resolve picklist selections and build HTML with formatting
+      let tokenIdx = 0;
+      let html = base.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+        const opts = inner.split("|");
+        if (opts[0].startsWith("@")) {
+          const label = opts[0].slice(1);
+          const url = opts[1] || "";
+          return `<a href="${url}">${label}</a>`;
+        }
+        const key = `${i}-${tokenIdx++}`;
+        return picklistSelections[key] ?? opts[0];
+      });
+      html = html.replace(/!!(.+?)!!/g, '<span style="color:#dc2626;font-weight:bold">$1</span>');
+      return `<li>${html}</li>`;
+    }).join("");
+
+    const container = document.createElement("div");
+    container.style.cssText = "position:fixed;top:-9999px;left:-9999px;font-family:Arial,sans-serif;font-size:13px";
+    container.innerHTML = `<p>${hf.header}</p><ul>${htmlLines}</ul><p>${hf.footer}</p>`;
+    document.body.appendChild(container);
 
     try {
-      const htmlBlob = new Blob([htmlNote], { type:"text/html" });
-      const textBlob = new Blob([plainText], { type:"text/plain" });
-      navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
-        .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); })
-        .catch(() => {
-          navigator.clipboard.writeText(plainText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); });
-        });
+      const range = document.createRange();
+      range.selectNodeContents(container);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      const ok = document.execCommand("copy");
+      sel.removeAllRanges();
+      document.body.removeChild(container);
+      if (ok) { doSuccess(); return; }
     } catch {
-      navigator.clipboard.writeText(plainText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); });
+      try { document.body.removeChild(container); } catch {}
     }
+
+    // Fallback: plain text via clipboard API
+    navigator.clipboard.writeText(fullNote).then(doSuccess).catch(() => {});
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
