@@ -941,49 +941,66 @@ export default function App() {
     };
     const doSuccess = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); };
 
-    // Build a hidden div with live DOM rendering — bold, red, and links render as
-    // real styled elements. Selecting and copying this div via execCommand causes
-    // the browser to write rich text to the clipboard in a format Epic accepts,
-    // because it copies rendered DOM rather than a manually constructed HTML string.
-    const htmlLines = noteLines.map((l, i) => {
-      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      // Resolve picklist selections and build HTML with formatting
+    // Build formatted HTML for each note line.
+    // Use <p> with a literal bullet character rather than <ul><li> — Epic strips
+    // list semantics on paste but preserves paragraph content including the bullet char.
+    const buildLineHtml = (text, lineIdx) => {
       let tokenIdx = 0;
-      let html = base.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+      let html = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
         const opts = inner.split("|");
         if (opts[0].startsWith("@")) {
           const label = opts[0].slice(1);
           const url = opts[1] || "";
           return `<a href="${url}">${label}</a>`;
         }
-        const key = `${i}-${tokenIdx++}`;
+        const key = `${lineIdx}-${tokenIdx++}`;
         return picklistSelections[key] ?? opts[0];
       });
       html = html.replace(/!!(.+?)!!/g, '<span style="color:#dc2626;font-weight:bold">$1</span>');
-      return `<li>${html}</li>`;
+      return html;
+    };
+
+    const lineParas = noteLines.map((l, i) => {
+      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
+      return `<p style="margin:0 0 4px 0">• ${buildLineHtml(base, i)}</p>`;
     }).join("");
 
-    const container = document.createElement("div");
-    container.style.cssText = "position:fixed;top:-9999px;left:-9999px;font-family:Arial,sans-serif;font-size:13px";
-    container.innerHTML = `<p>${hf.header}</p><ul>${htmlLines}</ul><p>${hf.footer}</p>`;
-    document.body.appendChild(container);
+    const fullHtml = `<p style="margin:0 0 8px 0">${hf.header}</p>${lineParas}<p style="margin:8px 0 0 0">${hf.footer}</p>`;
 
+    // Primary: use a hidden off-screen div, select its contents, and execCommand("copy").
+    // This writes to the clipboard via the browser's native selection mechanism,
+    // which produces the CF_HTML format that Epic's rich text fields accept.
+    const div = document.createElement("div");
+    div.style.cssText = "position:fixed;top:-9999px;left:-9999px;font-family:Arial,sans-serif;font-size:13px;color:#1f2937";
+    div.innerHTML = fullHtml;
+    document.body.appendChild(div);
+
+    let succeeded = false;
     try {
       const range = document.createRange();
-      range.selectNodeContents(container);
+      range.selectNodeContents(div);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-      const ok = document.execCommand("copy");
+      succeeded = document.execCommand("copy");
       sel.removeAllRanges();
-      document.body.removeChild(container);
-      if (ok) { doSuccess(); return; }
-    } catch {
-      try { document.body.removeChild(container); } catch {}
-    }
+    } catch(e) {}
+    document.body.removeChild(div);
 
-    // Fallback: plain text via clipboard API
-    navigator.clipboard.writeText(fullNote).then(doSuccess).catch(() => {});
+    if (succeeded) { doSuccess(); return; }
+
+    // Fallback: clipboard.write() with full HTML document — works in Word/Chrome
+    // but may not carry formatting into Epic
+    try {
+      const htmlDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937">${fullHtml}</body></html>`;
+      const htmlBlob = new Blob([htmlDoc], { type:"text/html" });
+      const textBlob = new Blob([fullNote], { type:"text/plain" });
+      navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
+        .then(doSuccess)
+        .catch(() => navigator.clipboard.writeText(fullNote).then(doSuccess).catch(()=>{}));
+    } catch {
+      navigator.clipboard.writeText(fullNote).then(doSuccess).catch(()=>{});
+    }
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
