@@ -415,11 +415,20 @@ export default function App() {
     let subLast = 0, subM, subIdx = 0;
     while ((subM = subRe.exec(value)) !== null) {
       if (subM.index > subLast) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast, subM.index)}</span>);
-      nodes.push(<strong key={`${key}-r${subIdx++}`} style={{ color:"#dc2626", fontWeight:700 }}>{subM[1]}</strong>);
+      nodes.push(<span key={`${key}-r${subIdx++}`} style={{ color:"#dc2626", fontWeight:700 }}>{subM[1]}</span>);
       subLast = subM.index + subM[0].length;
     }
     if (subLast < value.length) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast)}</span>);
     return nodes;
+  };
+
+  // Strip all markup notation from a text string to produce clean plain text
+  // Used for hover tooltips and plain-text clipboard fallback
+  const stripMarkup = (text) => {
+    let out = text.replace(/\{\{@([^|]*)\|[^}]*\}\}/g, "$1"); // {{@label|url}} -> label
+    out = out.replace(/\{\{([^}]+)\}\}/g, (_, inner) => inner.split("|")[0]); // {{a|b|c}} -> a
+    out = out.replace(/!!(.+?)!!/g, "$1"); // !!text!! -> text
+    return out;
   };
 
   // Parse a duration string to a comparable number of days
@@ -433,12 +442,12 @@ export default function App() {
   };
 
   // Resolve a line's text with picklist selections applied (for plain-text copy)
-  // Also strips !!...!! markers and unwraps {{@label|url}} to label only
+  // Strips !!...!! markers and unwraps {{@label|url}} to label only
   const resolveText = (text, lineIdx) => {
     let tokenIdx = 0;
     let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
       const opts = inner.split("|");
-      if (opts[0].startsWith("@")) return opts[0].slice(1); // link → plain label
+      if (opts[0].startsWith("@")) return opts[0].slice(1); // link -> plain label
       const key = `${lineIdx}-${tokenIdx++}`;
       return picklistSelections[key] ?? opts[0];
     });
@@ -446,8 +455,9 @@ export default function App() {
     return resolved;
   };
 
-  // Resolve a line's text into HTML string for rich clipboard copy
-  // Preserves bold/red and hyperlinks; resolves picklist selections
+  // Resolve a line's text into an HTML string for rich clipboard copy.
+  // Uses a full HTML document wrapper so Word and Epic accept rich formatting.
+  // Color is expressed as both a CSS attribute and an mso-color for Outlook/Epic compat.
   const resolveHtml = (text, lineIdx) => {
     let tokenIdx = 0;
     let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
@@ -455,12 +465,13 @@ export default function App() {
       if (opts[0].startsWith("@")) {
         const label = opts[0].slice(1);
         const url = opts[1] || "";
-        return `<a href="${url}">${label}</a>`;
+        return `<a href="${url}" style="color:#1d4ed8">${label}</a>`;
       }
       const key = `${lineIdx}-${tokenIdx++}`;
       return picklistSelections[key] ?? opts[0];
     });
-    resolved = resolved.replace(/!!(.+?)!!/g, '<strong style="color:#dc2626">$1</strong>');
+    resolved = resolved.replace(/!!(.+?)!!/g,
+      '<span style="color:#dc2626;font-weight:bold">$1</span>');
     return resolved;
   };
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
@@ -949,31 +960,26 @@ export default function App() {
   const copyNote = () => {
     if (isListening) stopListening();
 
-    // Build plain-text version (strips !! markers, resolves links to label only)
+    // Plain-text fallback (strips all markup notation)
     const plainText = fullNote;
 
-    // Build HTML version preserving bold/red and hyperlinks
+    // Rich HTML note — full document wrapper required for Word and Epic to accept formatting
     const htmlLines = noteLines.map((l, i) => {
       const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      return `<li>${resolveHtml(base, i)}</li>`;
+      return `<li style="margin-bottom:6px">${resolveHtml(base, i)}</li>`;
     }).join("");
-    const htmlNote = [
-      `<p>${hf.header}</p>`,
-      `<ul>${htmlLines}</ul>`,
-      `<p>${hf.footer}</p>`,
-    ].join("");
+    const htmlNote = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><p style="margin-bottom:12px">${hf.header}</p><ul style="margin:0;padding-left:20px">${htmlLines}</ul><p style="margin-top:12px">${hf.footer}</p></body></html>`;
 
     const doIncrement = () => {
       fetch("/api/stats?action=note").then(r=>r.json()).then(d=>setStats(d)).catch(()=>{});
     };
 
     try {
-      const htmlBlob = new Blob([htmlNote], { type: "text/html" });
-      const textBlob = new Blob([plainText], { type: "text/plain" });
+      const htmlBlob = new Blob([htmlNote], { type:"text/html" });
+      const textBlob = new Blob([plainText], { type:"text/plain" });
       navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
         .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); })
         .catch(() => {
-          // Fallback to plain text if rich copy fails
           navigator.clipboard.writeText(plainText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); });
         });
     } catch {
@@ -1190,7 +1196,7 @@ export default function App() {
                     style={{ borderBottom:"1px solid #f1f5f9", opacity: isDragging ? 0.5 : 1, background: isDragOver ? "#eff6ff" : "white", transition:"background 0.15s" }}>
                     <div className="lab-row" style={{ display:"flex", alignItems:"center", position:"relative" }}>
                       {/* Tooltip on outer row so it aligns consistently with/without expand arrow */}
-                      {defaultSnippet && <div className="snippet-tooltip">{defaultSnippet.text}</div>}
+                      {defaultSnippet && <div className="snippet-tooltip">{stripMarkup(defaultSnippet.text)}</div>}
                       {/* Six-dot grip handle */}
                       <div style={{ padding:"0 7px 0 9px", cursor:"grab", flexShrink:0, display:"flex", alignItems:"center" }} title="Drag to reorder" aria-hidden="true">
                         <svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1238,7 +1244,7 @@ export default function App() {
                                   : <>+ {s.trigger}</>
                                 }
                               </button>
-                              <div className="snippet-tooltip">{s.text}</div>
+                              <div className="snippet-tooltip">{stripMarkup(s.text)}</div>
                             </div>
                           );
                         })}
