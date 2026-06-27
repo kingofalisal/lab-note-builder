@@ -380,8 +380,10 @@ export default function App() {
   const [picklistSelections, setPicklistSelections] = useState({}); // key: `${lineIdx}-${tokenIdx}` → selected value
   const [openPicklist, setOpenPicklist] = useState(null); // key of currently open picklist dropdown
 
-  // Parse snippet text into segments: plain strings and picklist tokens
-  // Token syntax: {{default|option2|option3}}
+  // Parse snippet text into segments: plain strings, picklist tokens, and link tokens
+  // Picklist syntax: {{default|option2|option3}}
+  // Link syntax:     {{@display text|https://url}}
+  // Inline markup:   !!text!! renders as bold red
   const parseTokens = (text) => {
     const parts = [];
     const re = /\{\{([^}]+)\}\}/g;
@@ -389,14 +391,35 @@ export default function App() {
     while ((m = re.exec(text)) !== null) {
       if (m.index > last) parts.push({ type:"text", value: text.slice(last, m.index) });
       const rawOpts = m[1].split("|");
-      const defaultValue = rawOpts[0];
-      // Sort options by duration for display, keeping default value independent
-      const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
-      parts.push({ type:"picklist", options: sorted, defaultValue });
+      if (rawOpts[0].startsWith("@")) {
+        // Link token: {{@display text|https://url}}
+        const label = rawOpts[0].slice(1);
+        const url = rawOpts[1] || "";
+        parts.push({ type:"link", label, url });
+      } else {
+        // Picklist token
+        const defaultValue = rawOpts[0];
+        const sorted = [...rawOpts].sort((a, b) => parseDuration(a) - parseDuration(b));
+        parts.push({ type:"picklist", options: sorted, defaultValue });
+      }
       last = m.index + m[0].length;
     }
     if (last < text.length) parts.push({ type:"text", value: text.slice(last) });
     return parts;
+  };
+
+  // Render a plain text segment, recognizing !!text!! as bold+red inline spans
+  const renderInlineText = (value, key) => {
+    const subRe = /!!(.+?)!!/g;
+    const nodes = [];
+    let subLast = 0, subM, subIdx = 0;
+    while ((subM = subRe.exec(value)) !== null) {
+      if (subM.index > subLast) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast, subM.index)}</span>);
+      nodes.push(<strong key={`${key}-r${subIdx++}`} style={{ color:"#dc2626", fontWeight:700 }}>{subM[1]}</strong>);
+      subLast = subM.index + subM[0].length;
+    }
+    if (subLast < value.length) nodes.push(<span key={`${key}-t${subIdx++}`}>{value.slice(subLast)}</span>);
+    return nodes;
   };
 
   // Parse a duration string to a comparable number of days
@@ -409,14 +432,36 @@ export default function App() {
     return 0;
   };
 
-  // Resolve a line's text with picklist selections applied (for copy)
+  // Resolve a line's text with picklist selections applied (for plain-text copy)
+  // Also strips !!...!! markers and unwraps {{@label|url}} to label only
   const resolveText = (text, lineIdx) => {
     let tokenIdx = 0;
-    return text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+    let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
       const opts = inner.split("|");
+      if (opts[0].startsWith("@")) return opts[0].slice(1); // link → plain label
       const key = `${lineIdx}-${tokenIdx++}`;
       return picklistSelections[key] ?? opts[0];
     });
+    resolved = resolved.replace(/!!(.+?)!!/g, "$1"); // strip !! markers
+    return resolved;
+  };
+
+  // Resolve a line's text into HTML string for rich clipboard copy
+  // Preserves bold/red and hyperlinks; resolves picklist selections
+  const resolveHtml = (text, lineIdx) => {
+    let tokenIdx = 0;
+    let resolved = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
+      const opts = inner.split("|");
+      if (opts[0].startsWith("@")) {
+        const label = opts[0].slice(1);
+        const url = opts[1] || "";
+        return `<a href="${url}">${label}</a>`;
+      }
+      const key = `${lineIdx}-${tokenIdx++}`;
+      return picklistSelections[key] ?? opts[0];
+    });
+    resolved = resolved.replace(/!!(.+?)!!/g, '<strong style="color:#dc2626">$1</strong>');
+    return resolved;
   };
   const [recentlyAdded, setRecentlyAdded] = useState(null); // id of recently clicked trigger for checkmark flash
   const [tourActive, setTourActive] = useState(false);
@@ -903,12 +948,37 @@ export default function App() {
 
   const copyNote = () => {
     if (isListening) stopListening();
-    navigator.clipboard.writeText(fullNote).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      // increment notes counter
+
+    // Build plain-text version (strips !! markers, resolves links to label only)
+    const plainText = fullNote;
+
+    // Build HTML version preserving bold/red and hyperlinks
+    const htmlLines = noteLines.map((l, i) => {
+      const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
+      return `<li>${resolveHtml(base, i)}</li>`;
+    }).join("");
+    const htmlNote = [
+      `<p>${hf.header}</p>`,
+      `<ul>${htmlLines}</ul>`,
+      `<p>${hf.footer}</p>`,
+    ].join("");
+
+    const doIncrement = () => {
       fetch("/api/stats?action=note").then(r=>r.json()).then(d=>setStats(d)).catch(()=>{});
-    });
+    };
+
+    try {
+      const htmlBlob = new Blob([htmlNote], { type: "text/html" });
+      const textBlob = new Blob([plainText], { type: "text/plain" });
+      navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
+        .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); })
+        .catch(() => {
+          // Fallback to plain text if rich copy fails
+          navigator.clipboard.writeText(plainText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); });
+        });
+    } catch {
+      navigator.clipboard.writeText(plainText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); });
+    }
   };
 
   // ── Snippet editing ───────────────────────────────────────────────────────
@@ -1271,7 +1341,7 @@ export default function App() {
                       const freeTextPrefix = isFreeText ? `${GROUP_DISPLAY[line.group] || line.group}: ` : "";
                       const isEmpty = isFreeText && (currentText.trim() === freeTextPrefix.trim() || currentText.trim() === "");
                       const segments = parseTokens(currentText);
-                      const hasPicklists = !isEdited && segments.some(s => s.type === "picklist");
+                      const hasPicklists = !isEdited && segments.some(s => s.type === "picklist" || s.type === "link" || (s.type === "text" && /!!.+!!/.test(s.value)));
                       return (
                         <div key={i} className="note-bullet-row" style={{ display:"flex", gap:8, marginBottom:"0.7rem", alignItems:"flex-start", position:"relative" }}>
                           <span style={{ color:"#2563eb", fontWeight:700, flexShrink:0, marginTop:4 }}>•</span>
@@ -1279,7 +1349,8 @@ export default function App() {
                             {hasPicklists ? (
                               <div style={{ fontSize:13, lineHeight:1.9, color:"#1f2937", padding:"3px 6px" }}>
                                 {segments.map((seg, si) => {
-                                  if (seg.type === "text") return <span key={si}>{seg.value}</span>;
+                                  if (seg.type === "text") return <span key={si}>{renderInlineText(seg.value, si)}</span>;
+                                  if (seg.type === "link") return <a key={si} href={seg.url} target="_blank" rel="noopener noreferrer" style={{ color:"#2563eb", textDecoration:"underline", cursor:"pointer" }}>{seg.label}</a>;
                                   const tokenIdx = segments.slice(0,si).filter(s=>s.type==="picklist").length;
                                   const key = `${i}-${tokenIdx}`;
                                   const selected = picklistSelections[key] ?? seg.defaultValue;
