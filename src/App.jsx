@@ -941,9 +941,10 @@ export default function App() {
     };
     const doSuccess = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); };
 
-    // Build formatted HTML for each note line.
-    // Use <p> with a literal bullet character rather than <ul><li> — Epic strips
-    // list semantics on paste but preserves paragraph content including the bullet char.
+    // Build clipboard HTML for one note line.
+    // Uses legacy <b><font color> tags instead of style= attributes, and bare <a href>
+    // without style= — Epic's paste sanitizer allows these tag-based formats while
+    // stripping inline style attributes.
     const buildLineHtml = (text, lineIdx) => {
       let tokenIdx = 0;
       let html = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
@@ -956,20 +957,22 @@ export default function App() {
         const key = `${lineIdx}-${tokenIdx++}`;
         return picklistSelections[key] ?? opts[0];
       });
-      html = html.replace(/!!(.+?)!!/g, '<span style="color:#dc2626;font-weight:bold">$1</span>');
+      // <b><font color="#dc2626"> instead of <span style="color:...;font-weight:bold">
+      html = html.replace(/!!(.+?)!!/g, '<b><font color="#dc2626">$1</font></b>');
       return html;
     };
 
     const lineParas = noteLines.map((l, i) => {
       const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      return `<p style="margin:0 0 4px 0">• ${buildLineHtml(base, i)}</p>`;
+      return `<p style="margin:0 0 4px 0">• ${buildLineHtml(base, i)}</p>`;
     }).join("");
 
     const fullHtml = `<p style="margin:0 0 8px 0">${hf.header}</p>${lineParas}<p style="margin:8px 0 0 0">${hf.footer}</p>`;
 
-    // Primary: use a hidden off-screen div, select its contents, and execCommand("copy").
-    // This writes to the clipboard via the browser's native selection mechanism,
-    // which produces the CF_HTML format that Epic's rich text fields accept.
+    // Primary: execCommand copy from a hidden off-screen div.
+    // This goes through the browser's native selection mechanism and produces
+    // CF_HTML format that Epic accepts. The <b><font> tags survive Epic's
+    // sanitizer where style= attributes do not.
     const div = document.createElement("div");
     div.style.cssText = "position:fixed;top:-9999px;left:-9999px;font-family:Arial,sans-serif;font-size:13px;color:#1f2937";
     div.innerHTML = fullHtml;
@@ -989,10 +992,9 @@ export default function App() {
 
     if (succeeded) { doSuccess(); return; }
 
-    // Fallback: clipboard.write() with full HTML document — works in Word/Chrome
-    // but may not carry formatting into Epic
+    // Fallback: clipboard.write() with full HTML document
     try {
-      const htmlDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937">${fullHtml}</body></html>`;
+      const htmlDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px">${fullHtml}</body></html>`;
       const htmlBlob = new Blob([htmlDoc], { type:"text/html" });
       const textBlob = new Blob([fullNote], { type:"text/plain" });
       navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
