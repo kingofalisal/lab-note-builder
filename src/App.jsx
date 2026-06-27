@@ -941,10 +941,7 @@ export default function App() {
     };
     const doSuccess = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); doIncrement(); };
 
-    // Build clipboard HTML for one note line.
-    // Uses legacy <b><font color> tags instead of style= attributes, and bare <a href>
-    // without style= — Epic's paste sanitizer allows these tag-based formats while
-    // stripping inline style attributes.
+    // Build formatted HTML for one note line
     const buildLineHtml = (text, lineIdx) => {
       let tokenIdx = 0;
       let html = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) => {
@@ -957,44 +954,57 @@ export default function App() {
         const key = `${lineIdx}-${tokenIdx++}`;
         return picklistSelections[key] ?? opts[0];
       });
-      // <b><font color="#dc2626"> instead of <span style="color:...;font-weight:bold">
       html = html.replace(/!!(.+?)!!/g, '<b><font color="#dc2626">$1</font></b>');
       return html;
     };
 
     const lineParas = noteLines.map((l, i) => {
       const base = noteEdits[i] !== undefined ? noteEdits[i] : l.text;
-      return `<p style="margin:0 0 4px 0">• ${buildLineHtml(base, i)}</p>`;
+      return `<p>• ${buildLineHtml(base, i)}</p>`;
     }).join("");
 
-    const fullHtml = `<p style="margin:0 0 8px 0">${hf.header}</p>${lineParas}<p style="margin:8px 0 0 0">${hf.footer}</p>`;
+    const fullHtml = `<p>${hf.header}</p>${lineParas}<p>${hf.footer}</p>`;
 
-    // Primary: execCommand copy from a hidden off-screen div.
-    // This goes through the browser's native selection mechanism and produces
-    // CF_HTML format that Epic accepts. The <b><font> tags survive Epic's
-    // sanitizer where style= attributes do not.
-    const div = document.createElement("div");
-    div.style.cssText = "position:fixed;top:-9999px;left:-9999px;font-family:Arial,sans-serif;font-size:13px;color:#1f2937";
-    div.innerHTML = fullHtml;
-    document.body.appendChild(div);
+    // Strategy: use a focused contenteditable div + execCommand("copy").
+    // contenteditable elements get special browser clipboard handling that
+    // produces proper CF_HTML on the Windows clipboard — distinct from copying
+    // a regular (non-editable) div's selected content.
+    const editor = document.createElement("div");
+    editor.contentEditable = "true";
+    editor.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:600px;font-family:Arial,sans-serif;font-size:13px;color:#1f2937;opacity:0;pointer-events:none";
+    editor.innerHTML = fullHtml;
+    document.body.appendChild(editor);
 
     let succeeded = false;
     try {
+      editor.focus();
       const range = document.createRange();
-      range.selectNodeContents(div);
+      range.selectNodeContents(editor);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
       succeeded = document.execCommand("copy");
       sel.removeAllRanges();
     } catch(e) {}
-    document.body.removeChild(div);
+    document.body.removeChild(editor);
 
     if (succeeded) { doSuccess(); return; }
 
-    // Fallback: clipboard.write() with full HTML document
+    // Fallback: clipboard.write() with Office-compatible HTML document.
+    // Includes mso namespace declarations that Epic (built on IE/Office rendering)
+    // may require to trust the clipboard content.
     try {
-      const htmlDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;font-size:13px">${fullHtml}</body></html>`;
+      const htmlDoc = [
+        '<!DOCTYPE html>',
+        '<html xmlns:o="urn:schemas-microsoft-com:office:office"',
+        '      xmlns:w="urn:schemas-microsoft-com:office:word"',
+        '      xmlns="http://www.w3.org/TR/REC-html40">',
+        '<head><meta charset="utf-8">',
+        '<style>p{margin:0 0 4px 0;font-family:Arial,sans-serif;font-size:13px}</style>',
+        '</head>',
+        `<body>${fullHtml}</body>`,
+        '</html>'
+      ].join("");
       const htmlBlob = new Blob([htmlDoc], { type:"text/html" });
       const textBlob = new Blob([fullNote], { type:"text/plain" });
       navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob })])
